@@ -1,0 +1,22 @@
+manifest:
+  self:
+    path: .
+
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+    - name: Finwood
+      url-base: https://github.com/Finwood
+
+  projects:
+    - name: zephyr
+      # remote: zephyrproject-rtos
+      # revision: v4.4.0
+      # clone-depth: 1
+      remote: Finwood
+      revision: main
+      west-commands: scripts/west-commands.yml
+      import:
+        path-prefix: deps
+        name-allowlist:
+          - cmsis_6
