@@ -1,5 +1,18 @@
 # AGENTS.md
 
+## Commit messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for all git commits in this
+repo. Do **not** vendor the skill here; install it globally (user-level) if it is missing:
+
+```bash
+npx skills add https://smithery.ai/skills/dgalarza/conventional-commits -g -y
+```
+
+When creating or amending commits, follow the **conventional-commits** skill
+(`~/.agents/skills/conventional-commits/SKILL.md`). Invoke it explicitly
+(`/conventional-commits`) if it is not already in context.
+
 ## Cursor Cloud specific instructions
 
 This repo is a **Zephyr T2 workspace** (west manifest repo + the `zephyr-devel` module). The
