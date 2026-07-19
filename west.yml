@@ -20,3 +20,4 @@ manifest:
         path-prefix: deps
         name-allowlist:
           - cmsis_6
+          - hal_stm32
