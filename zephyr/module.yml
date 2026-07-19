@@ -1,1 +1,6 @@
 name: zephyr-devel
+
+build:
+  cmake: common
+  settings:
+    board_root: .
