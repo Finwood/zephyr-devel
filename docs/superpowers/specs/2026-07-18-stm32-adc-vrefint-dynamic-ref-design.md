@@ -260,9 +260,17 @@ Does **not** require `CONFIG_STM32_VREF` (sensor may remain disabled).
 | `vrefint-cal-mv` | Factory VREF+ (mV) |
 | `vrefint-cal-resolution` | Shift to 12-bit measurement |
 
-Controller property `vref-mv`: per-instance **fallback** for `api.ref_internal`.
-Fix today’s `DT_INST_PROP(0, vref_mv)` quirk so each instance uses its own
-property for the static field (measured/set cache still shared via getters).
+Controller property `vref-mv`: optional (`default: 3300` in `st,stm32-adc`);
+per-instance **fallback** for `api.ref_internal` / getter when the cache is
+invalid. Fix today’s `DT_INST_PROP(0, vref_mv)` quirk so each instance uses its
+own property for the static field (measured/set cache still shared via getters).
+
+**Breaking change (document in migration guide):** multi-ADC boards that set
+**different** `vref-mv` values per ADC instance previously saw *all* instances
+report instance 0’s value via the shared `DEVICE_API`. After the fix,
+`adc_ref_internal(adcN)` (with getters NULL, or as DT fallback before a live
+cache) uses **that instance’s** DT property. Boards that omit `vref-mv` or use
+the same value on every ADC are unaffected.
 
 ### 6.3 Shared cache
 
@@ -370,7 +378,7 @@ existing surfaces over inventing parallel guides. Binding HTML pages are
 | Peripheral overview | `doc/hardware/peripherals/adc.rst` | Today this is almost only a doxygen include. Add a short **Overview** subsection: static vs dynamic internal reference; point to `adc_ref_internal()` / `adc_ref_internal_set()`; clarify channel DT `zephyr,vref-mv` is for **non-internal** refs and is not routed through `vref_get` in this slice. |
 | Emulator header | `include/zephyr/drivers/adc/adc_emul.h` | If emul implements the new ops, document relationship to `adc_emul_ref_voltage_set()` (wrapper vs dual path). |
 | Release notes | `doc/releases/release-notes-<next>.rst` → **API Changes** | New APIs listed (Zephyr style: new APIs go here; behavioral notes may also need migration guide). |
-| Migration guide | `doc/releases/migration-guide-<next>.rst` | Only if default driver behavior changes observed mV (e.g. STM32 measure-on-init). Explain: more accurate scale; apps that assumed exact DT `vref-mv` may see small deltas; how to disable feature via Kconfig. |
+| Migration guide | `doc/releases/migration-guide-<next>.rst` | **Required for Part 2.** Call out as **breaking / behavior changes** (see §11): (1) default measure-on-init may change observed mV vs DT `vref-mv` / 3300; (2) per-instance `vref-mv` quirk fix. How to restore prior behavior (`CONFIG_ADC_STM32_VREFINT_CALIBRATE=n` for (1); align DT properties for (2)). |
 
 ### 9.2 Samples (required for new API surface)
 
@@ -426,7 +434,8 @@ Document STM32 policy in Kconfig/binding prose:
 - [ ] Doxygen on all new/changed public symbols
 - [ ] `doc/hardware/peripherals/adc.rst` overview blurb
 - [ ] Release notes **API Changes** entry
-- [ ] Migration guide entry if STM32 default mV behavior changes
+- [ ] Migration guide entry for STM32 breaking/behavior changes (§11: measured mV + per-instance `vref-mv`)
+- [ ] Release notes note with pointer to migration guide (in addition to Part 1 API Changes)
 - [ ] Binding YAML descriptions updated (`st,stm32-adc`, optionally `st,stm32-vref`, channel `zephyr,vref-mv`)
 - [ ] Kconfig help complete
 - [ ] Sample updated or added + `index.rst` / `zephyr:code-sample` metadata
@@ -448,13 +457,34 @@ Emulator may optionally implement `vref_get` / `vref_set` for host tests (`adc_e
 
 ## 11. Migration & compatibility
 
-- Default `ADC_STM32_VREFINT_CALIBRATE=y` when `st,stm32-vref` is enabled changes
-  millivolt results vs blind 3300 DT assumption — **more accurate**, may shift
-  numbers slightly for apps that assumed exact 3300.
-- Apps that already compensate with the sensor can drop double correction once
-  they trust `adc_ref_internal()`.
-- `st,stm32-vref` sensor remains available for direct voltage reporting.
-- Document the behavior change in the migration guide (see §9.1).
+Call these out explicitly as **behavior / breaking changes** in the upstream
+migration guide (and briefly in release notes if Zephyr style expects a pointer).
+
+1. **Measured INTERNAL scale (default on when `st,stm32-vref` present)**  
+   With `CONFIG_ADC_STM32_VREFINT_CALIBRATE=y` (default when the DT node exists),
+   `adc_ref_internal()` and INTERNAL `adc_raw_to_*_dt()` results may differ from
+   the previous blind DT `vref-mv` / default 3300 assumption — usually **more
+   accurate**. Apps that hard-coded expectations on exact 3300 (or exact DT
+   millivolts) must tolerate small deltas or set
+   `CONFIG_ADC_STM32_VREFINT_CALIBRATE=n` to keep DT-only static scale (no get/set,
+   no init/`sequence.calibrate` VREFINT refresh).
+
+2. **Per-instance `vref-mv` (quirk fix)**  
+   Previously all STM32 ADC instances shared `DT_INST_PROP(0, vref_mv)` via one
+   `DEVICE_API`. After the fix, each instance uses its own `vref-mv` (still
+   optional, default 3300). **Breaking** only if a multi-ADC board set divergent
+   `vref-mv` per instance and relied on non-zero instances inheriting instance 0’s
+   value. Mitigation: give every ADC the intended `vref-mv`, or omit the property
+   and keep the shared default.
+
+Other notes:
+
+- Apps that already compensate with the `st,stm32-vref` sensor can drop double
+  correction once they trust `adc_ref_internal()`.
+- The sensor remains available for direct voltage reporting.
+- `CONFIG_ADC_STM32_VREFINT_CALIBRATE` gates the full STM32 dynamic-ref feature
+  (install get/set, measure at init, refresh on owner `sequence.calibrate`) — not
+  only the sequence flag.
 
 ## 12. Future work (out of this slice)
 
