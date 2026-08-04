@@ -14,7 +14,7 @@ manifest:
       # revision: v4.4.0
       # clone-depth: 1
       remote: Finwood
-      revision: main
+      revision: cursor/adc-vref-runtime-api-c2e3
       west-commands: scripts/west-commands.yml
       import:
         path-prefix: deps
