@@ -1,0 +1,80 @@
+From 4cd83396dfe21d40e393e239b96703146b19f5cb Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Tue, 4 Aug 2026 19:56:01 +0000
+Subject: [PATCH 3/4] docs: adc: document runtime internal reference get/set
+
+Describe optional vref ops and adc_ref_internal_set; show ref_internal
+in the adc_dt sample.
+
+Tested with: west build -b nucleo_l073rz samples/drivers/adc/adc_dt
+
+Link: https://github.com/zephyrproject-rtos/zephyr/issues/113971
+
+Assisted-by: Cursor:composer-2.5
+---
+ doc/hardware/peripherals/adc.rst      | 14 ++++++++++++++
+ doc/releases/release-notes-4.5.rst    |  7 +++++++
+ samples/drivers/adc/adc_dt/src/main.c |  4 ++++
+ 3 files changed, 25 insertions(+)
+
+diff --git a/doc/hardware/peripherals/adc.rst b/doc/hardware/peripherals/adc.rst
+index 3a65bcb0c..db61bfbae 100644
+--- a/doc/hardware/peripherals/adc.rst
++++ b/doc/hardware/peripherals/adc.rst
+@@ -6,6 +6,20 @@ Analog-to-Digital Converter (ADC)
+ Overview
+ ********
+ 
++The ADC API converts raw sample values to millivolts using a per-channel
++reference configuration.  For channels that use :c:enumerator:`ADC_REF_INTERNAL`,
++the millivolt scale comes from the driver: most drivers expose a static
++:c:member:`adc_driver_api.ref_internal` value, while drivers that support
++runtime updates may implement optional :c:member:`adc_driver_api.vref_get` and
++:c:member:`adc_driver_api.vref_set` callbacks.  Use :c:func:`adc_ref_internal`
++to read the current internal reference in millivolts and
++:c:func:`adc_ref_internal_set` to update it when the driver supports that
++operation.
++
++The devicetree property ``zephyr,vref-mv`` remains the way to specify a fixed
++millivolt reference for channels that do **not** use
++:c:enumerator:`ADC_REF_INTERNAL`.  That property is not routed through
++:c:member:`adc_driver_api.vref_get` in this release.
+ 
+ API Reference
+ *************
+diff --git a/doc/releases/release-notes-4.5.rst b/doc/releases/release-notes-4.5.rst
+index 5084d6270..fabd57c5b 100644
+--- a/doc/releases/release-notes-4.5.rst
++++ b/doc/releases/release-notes-4.5.rst
+@@ -192,6 +192,13 @@ New APIs and options
+   * :c:member:`pcm_stream_cfg.gain_db`
+   * :c:struct:`audio_codec_eq_cfg`
+ 
++* ADC
++
++  * :c:func:`adc_ref_internal_set`
++  * Optional :c:member:`adc_driver_api.vref_get` and
++    :c:member:`adc_driver_api.vref_set` callbacks, and an updated
++    :c:func:`adc_ref_internal` that uses them when present
++
+ * Bluetooth
+ 
+   * Audio
+diff --git a/samples/drivers/adc/adc_dt/src/main.c b/samples/drivers/adc/adc_dt/src/main.c
+index 474e65af1..4d644d6ac 100644
+--- a/samples/drivers/adc/adc_dt/src/main.c
++++ b/samples/drivers/adc/adc_dt/src/main.c
+@@ -56,6 +56,10 @@ int main(void)
+ 			printk("Could not setup channel #%d (%d)\n", i, err);
+ 			return 0;
+ 		}
++
++		uint16_t vref = adc_ref_internal(adc_channels[i].dev);
++
++		printk("ADC ref_internal: %u mV\n", vref);
+ 	}
+ 
+ #ifndef CONFIG_COVERAGE
+-- 
+2.43.0
+

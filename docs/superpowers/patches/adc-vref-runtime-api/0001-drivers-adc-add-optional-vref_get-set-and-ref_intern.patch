@@ -1,0 +1,223 @@
+From ee10298aeea3624fd89e63b72ad799ecd421a938 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Tue, 4 Aug 2026 19:48:48 +0000
+Subject: [PATCH 1/4] drivers: adc: add optional vref_get/set and
+ ref_internal_set
+
+Allow drivers to expose a runtime millivolt scale keyed by
+enum adc_reference, with INTERNAL shorthands for applications.
+
+Tested with: build regenerates syscalls; adc_emul twister 12/15 pass
+(3 new set/get tests fail -ENOTSUP until Task 3 emul wiring)
+
+Link: https://github.com/zephyrproject-rtos/zephyr/issues/113971
+
+Assisted-by: Cursor:composer-2.5
+---
+ drivers/adc/adc_handlers.c            |  9 +++
+ include/zephyr/drivers/adc.h          | 81 ++++++++++++++++++++++++++-
+ tests/drivers/adc/adc_emul/src/main.c | 58 +++++++++++++++++++
+ 3 files changed, 145 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/adc/adc_handlers.c b/drivers/adc/adc_handlers.c
+index d5f4e43d2..222fae68c 100644
+--- a/drivers/adc/adc_handlers.c
++++ b/drivers/adc/adc_handlers.c
+@@ -91,3 +91,12 @@ static inline int z_vrfy_adc_read_async(const struct device *dev,
+ }
+ #include <zephyr/syscalls/adc_read_async_mrsh.c>
+ #endif /* CONFIG_ADC_ASYNC */
++
++static inline int z_vrfy_adc_ref_internal_set(const struct device *dev,
++					      uint16_t vref_mv)
++{
++	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_ADC));
++
++	return z_impl_adc_ref_internal_set(dev, vref_mv);
++}
++#include <zephyr/syscalls/adc_ref_internal_set_mrsh.c>
+diff --git a/include/zephyr/drivers/adc.h b/include/zephyr/drivers/adc.h
+index c8b5e5b1e..77b9d24fe 100644
+--- a/include/zephyr/drivers/adc.h
++++ b/include/zephyr/drivers/adc.h
+@@ -1010,6 +1010,23 @@ typedef int (*adc_api_read_async)(const struct device *dev,
+ 				  const struct adc_sequence *sequence,
+ 				  struct k_poll_signal *async);
+ 
++/**
++ * @brief Type definition of ADC API function for getting a reference
++ *        voltage in millivolts.
++ * See adc_ref_internal() for related public helper.
++ */
++typedef uint16_t (*adc_api_vref_get)(const struct device *dev,
++				     enum adc_reference reference);
++
++/**
++ * @brief Type definition of ADC API function for setting a reference
++ *        voltage in millivolts.
++ * See adc_ref_internal_set() for argument descriptions.
++ */
++typedef int (*adc_api_vref_set)(const struct device *dev,
++				enum adc_reference reference,
++				uint16_t vref_mv);
++
+ /**
+  * @driver_ops{ADC}
+  */
+@@ -1041,8 +1058,23 @@ __subsystem struct adc_driver_api {
+ 	 * @driver_ops_mandatory Internal reference voltage, in millivolts.
+ 	 *
+ 	 * Set to 0 if internal reference is not supported.
++	 * Used as the fallback when @c vref_get is NULL (or, for drivers that
++	 * implement @c vref_get, as the DT fallback the getter itself returns
++	 * when no live cache is valid).
+ 	 */
+ 	uint16_t ref_internal;
++	/**
++	 * @driver_ops_optional Get the millivolt scale for a reference.
++	 * When NULL, adc_ref_internal() returns @c ref_internal.
++	 * Unsupported @p reference: return 0.
++	 */
++	adc_api_vref_get vref_get;
++	/**
++	 * @driver_ops_optional Set the millivolt scale for a reference.
++	 * Does not reconfigure the hardware mux. When NULL,
++	 * adc_ref_internal_set() returns -ENOTSUP.
++	 */
++	adc_api_vref_set vref_set;
+ };
+ 
+ /** @} */
+@@ -1298,14 +1330,57 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
+  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
+  * measured in millivolts.
+  *
++ * When the driver provides @c vref_get, that callback is used to obtain the
++ * current millivolt scale. Otherwise, the static @c ref_internal field from
++ * the driver API is returned.
++ *
+  * @param dev Pointer to the device structure for the driver instance.
+  *
+- * @return a positive value is the reference voltage value.  Returns
+- * zero if reference voltage information is not available.
++ * @return A positive value is the reference voltage value. Returns zero if
++ * reference voltage information is not available.
+  */
+ static inline uint16_t adc_ref_internal(const struct device *dev)
+ {
+-	return DEVICE_API_GET(adc, dev)->ref_internal;
++	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
++
++	if (api->vref_get != NULL) {
++		return api->vref_get(dev, ADC_REF_INTERNAL);
++	}
++
++	return api->ref_internal;
++}
++
++/**
++ * @brief Set the internal reference voltage scale.
++ *
++ * Updates the millivolt scale used for @ref ADC_REF_INTERNAL conversions.
++ * This does not reconfigure the hardware reference multiplexer; it only
++ * changes the value reported by adc_ref_internal() and used by helpers such
++ * as adc_raw_to_millivolts_dt() for internal-reference channels.
++ *
++ * When the driver does not implement @c vref_set, this function returns
++ * -ENOTSUP. Drivers that implement @c vref_set may return -EINVAL when
++ * @p vref_mv is zero or otherwise invalid.
++ *
++ * @param dev Pointer to the device structure for the driver instance.
++ * @param vref_mv New internal reference voltage in millivolts.
++ *
++ * @retval 0 On success.
++ * @retval -ENOTSUP If the driver does not support runtime updates.
++ * @retval -EINVAL If @p vref_mv is rejected by the driver.
++ */
++__syscall int adc_ref_internal_set(const struct device *dev, uint16_t vref_mv);
++
++static inline int z_impl_adc_ref_internal_set(const struct device *dev,
++					      uint16_t vref_mv)
++{
++	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
++
++	if (api->vref_set == NULL) {
++		return -ENOTSUP;
++	}
++
++	return api->vref_set(dev, ADC_REF_INTERNAL, vref_mv);
+ }
+ 
+ /**
+diff --git a/tests/drivers/adc/adc_emul/src/main.c b/tests/drivers/adc/adc_emul/src/main.c
+index 7052f60c3..4af6d74e6 100644
+--- a/tests/drivers/adc/adc_emul/src/main.c
++++ b/tests/drivers/adc/adc_emul/src/main.c
+@@ -737,6 +737,64 @@ ZTEST_USER(adc_emul, test_adc_emul_ref_voltage_set)
+ 	check_empty_samples(samples * 2);
+ }
+ 
++ZTEST_USER(adc_emul, test_adc_ref_internal_set_and_get)
++{
++	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
++	int ret;
++	uint16_t before = adc_ref_internal(adc_dev);
++
++	zassert_true(before > 0, "expected non-zero DT internal ref");
++
++	ret = adc_ref_internal_set(adc_dev, 2500);
++	zassert_ok(ret, "adc_ref_internal_set failed: %d", ret);
++	zassert_equal(adc_ref_internal(adc_dev), 2500,
++		      "getter did not observe set value");
++
++	zassert_ok(adc_ref_internal_set(adc_dev, before));
++}
++
++ZTEST_USER(adc_emul, test_adc_ref_internal_set_rejects_zero)
++{
++	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
++
++	zassert_equal(adc_ref_internal_set(adc_dev, 0), -EINVAL);
++}
++
++ZTEST_USER(adc_emul, test_adc_raw_to_millivolts_dt_tracks_ref_internal_set)
++{
++	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
++	const uint16_t runtime_ref_mv = 2500;
++	const int32_t raw_value = BIT(ADC_RESOLUTION) / 2;
++	const int32_t expected_mv = runtime_ref_mv / 2;
++	int32_t output = raw_value;
++	int ret;
++
++	static const struct adc_dt_spec adc_internal_spec = {
++		.dev = DEVICE_DT_GET(ADC_DEVICE_NODE),
++		.channel_id = ADC_1ST_CHANNEL_ID,
++		.channel_cfg_dt_node_exists = true,
++		.channel_cfg = {
++			.gain = ADC_GAIN_1,
++			.reference = ADC_REF_INTERNAL,
++			.acquisition_time = ADC_ACQUISITION_TIME,
++			.channel_id = ADC_1ST_CHANNEL_ID,
++		},
++		.resolution = ADC_RESOLUTION,
++	};
++
++	channel_setup(adc_dev, ADC_REF_INTERNAL, ADC_GAIN_1, ADC_1ST_CHANNEL_ID);
++
++	ret = adc_ref_internal_set(adc_dev, runtime_ref_mv);
++	zassert_ok(ret, "adc_ref_internal_set failed: %d", ret);
++
++	ret = adc_raw_to_millivolts_dt(&adc_internal_spec, &output);
++	zassert_ok(ret, "adc_raw_to_millivolts_dt() failed with code %d", ret);
++	zassert_within(expected_mv, output, MV_OUTPUT_EPS,
++		       "conversion did not track runtime internal ref");
++
++	zassert_ok(adc_ref_internal_set(adc_dev, ADC_REF_INTERNAL_MV));
++}
++
+ void *adc_emul_setup(void)
+ {
+ 	k_object_access_grant(get_adc_device(), k_current_get());
+-- 
+2.43.0
+
