@@ -22,7 +22,7 @@ non-obvious, durable notes are captured here.
 
 Cloud Environment setup is committed at [`.cursor/environment.json`](.cursor/environment.json)
 (runs [`.cursor/cloud-install.sh`](.cursor/cloud-install.sh)). Details:
-[`docs/superpowers/cloud-environment.md`](docs/superpowers/cloud-environment.md).
+[`.cursor/cloud-environment.md`](.cursor/cloud-environment.md).
 
 The **repo group** (sibling checkouts of `zephyr` + `zephyr-devel`) is still selected in the
 dashboard environment; that part is not expressible in `environment.json`.

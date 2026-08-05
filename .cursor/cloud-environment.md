@@ -1,7 +1,7 @@
 # Cursor Cloud Environment (zephyr + zephyr-devel)
 
-Config is committed at [`.cursor/environment.json`](../../.cursor/environment.json)
-and runs [`.cursor/cloud-install.sh`](../../.cursor/cloud-install.sh).
+Config is committed at [`environment.json`](./environment.json)
+and runs [`cloud-install.sh`](./cloud-install.sh).
 
 The **repo group** (which repos are cloned as siblings) still lives in the
 dashboard multi-repo environment:
