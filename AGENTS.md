@@ -20,40 +20,80 @@ This repo is a **Zephyr T2 workspace** (west manifest repo + the `zephyr-devel` 
 `west`. There is no web server or database. Standard setup steps live in `README.md`; only the
 non-obvious, durable notes are captured here.
 
-### What the update script already handles
-On each session start the update script runs `uv sync` (Python tooling incl. `west`) and
-`uv run west update --narrow --fetch-opt=--depth=1` (fetches Finwoos/zephyr main into `deps/`).
-You do **not** need to re-run these unless `pyproject.toml` or `west.yml` changed.
+Cloud Environment setup (dashboard install, Builds, sibling wiring) is documented in
+[`docs/superpowers/cloud-environment.md`](docs/superpowers/cloud-environment.md). The install
+script is [`.cursor/cloud-install.sh`](.cursor/cloud-install.sh).
 
-### Already provisioned in the VM image (do not reinstall)
-- `uv` is installed and symlinked into `/usr/local/bin`, so it is on `PATH` for any shell.
-- Zephyr build system deps via apt: `ninja-build`, `device-tree-compiler`, `gperf`, `ccache`,
-  `gcc-multilib`/`g++-multilib` (the 32-bit libs are required because `native_sim` defaults to a
-  32-bit build).
-- **Zephyr SDK 1.0.1** at `/opt/zephyr-sdk-1.0.1` (`/opt` is chowned to `ubuntu`).
+### Two-repo layout
+
+Cloud Agents use a **multi-repo** environment with sibling checkouts, typically:
+
+```text
+<parent>/zephyr              # Finwood/zephyr (editable)
+<parent>/zephyr-devel        # this repo (west manifest)
+<parent>/zephyr-devel/deps/zephyr -> symlink to ../zephyr (or absolute sibling path)
+```
+
+Do **not** re-clone Zephyr into `deps/zephyr` when the sibling exists. The install script wires
+the symlink and seeds west's `refs/heads/manifest-rev` so imports (`cmsis_6`, `hal_stm32`) work.
+After `west update`, restore the sibling branch if west left it detached.
+
+`deps/` is gitignored; the symlink is created by install, not committed.
+
+### What the update / install script already handles
+
+On environment build (and when re-run), `.cursor/cloud-install.sh`:
+
+- ensures apt toolchain packages + `uv`
+- wires `deps/zephyr` → sibling `zephyr`
+- runs `uv sync` and `uv run west update --narrow --fetch-opt=--depth=1`
+- installs Zephyr SDK under `/opt` when missing (`x86_64-zephyr-elf`, `arm-zephyr-eabi`)
+- exports `ZEPHYR_*` in `~/.bashrc`
+
+You do **not** need to re-run these unless `pyproject.toml` / `west.yml` changed or the SDK is
+absent.
+
+### Already provisioned after a successful Cloud Build
+
+- `uv` on `PATH` (`~/.local/bin` and usually `/usr/local/bin`)
+- apt: `ninja-build`, `device-tree-compiler`, `gperf`, `ccache`, `gcc-multilib` / `g++-multilib`
+  (32-bit libs required because `native_sim` defaults to a 32-bit build)
+- Zephyr SDK under `/opt/zephyr-sdk-*` (`ZEPHYR_SDK_INSTALL_DIR=/opt/`)
 
 ### Required environment variables (gotcha)
-`direnv` is **not** installed, so `.envrc` does **not** auto-load. The following are exported in
-`~/.bashrc`, but if your shell does not source it, export them manually before building:
+
+`direnv` is **not** installed, so `.envrc` does **not** auto-load. Install writes these to
+`~/.bashrc`; if your shell does not source it, export them manually before building:
 
 ```bash
-export ZEPHYR_BASE=/workspace/deps/zephyr
+# Prefer the wired west path (symlink to sibling zephyr):
+export ZEPHYR_BASE="<zephyr-devel>/deps/zephyr"
 export ZEPHYR_SDK_INSTALL_DIR=/opt/
 export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 ```
 
+Common parents: `/agent/repos/zephyr-devel` or `/workspace/zephyr-devel`.
+
 ### Build / run / test / lint
-All `west` commands must be prefixed with `uv run` (west lives in the uv venv).
+
+All `west` commands must be prefixed with `uv run` (west lives in the uv venv). Run them from
+`zephyr-devel` (the west workspace root).
 
 ```bash
 # Build + run any app on the simulator (the produced binary is zephyr/zephyr.exe):
 uv run west build -b native_sim -d /tmp/b <app_path>
 /tmp/b/zephyr/zephyr.exe        # Ctrl-C / it self-stops; native_sim is interactive
 
-# Tests use twister (the harness zcyphal's tests/ target):
+# Tests use twister:
 uv run west twister -T <tests_dir> -p native_sim
 
 # Lint (Python tooling): ruff and yamllint are available in the venv:
 uv run ruff check .
 uv run yamllint <files>
+```
+
+If the Zephyr SDK is missing and you only need host `native_sim`, you can temporarily use:
+
+```bash
+export ZEPHYR_TOOLCHAIN_VARIANT=host
 ```
