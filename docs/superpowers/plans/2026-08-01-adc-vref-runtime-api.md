@@ -1,5 +1,10 @@
 # ADC Runtime Vref API (Part 1) Implementation Plan
 
+> **Superseded** by `docs/superpowers/plans/2026-08-05-adc-ref-internal-get.md`
+> and spec `docs/superpowers/specs/2026-08-05-adc-ref-internal-get-design.md`
+> (getter-only; no public `adc_ref_internal_set` / enum-keyed `vref_*`).
+> Keep this file for historical context only — do not execute.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add optional enum-keyed `vref_get` / `vref_set` to the Zephyr ADC driver API, with public INTERNAL shorthands `adc_ref_internal()` / `adc_ref_internal_set()`, plus emul + tests + docs — no vendor driver behavior change.
