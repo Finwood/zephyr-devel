@@ -54,6 +54,10 @@ a feature branch via `refs`.
 Repo-file managed environments cannot use `environment_json` overrides on
 `trigger-environment-build`; test config changes by building the feature branch.
 
-Validated draft build (feature-branch refs, not promotable):
-`bld-20260805-d95578d7-af58-442d-90fb-e436a46e0c69` — install exit 0 (apt, uv,
-sibling symlink, west update, SDK 1.0.1).
+Validated draft builds (feature-branch refs, not promotable):
+
+- `bld-20260805-d95578d7-af58-442d-90fb-e436a46e0c69` — initial cloud-install
+  (apt, uv, sibling symlink, west update, SDK 1.0.1)
+- `bld-20260805-0d2f2399-e535-41c0-ac35-e5da4843a9e5` — `find_repo` sibling fix
+  (`cursor/fix-cloud-install-find-repo-98bf`); wires `/agent/repos/zephyr`,
+  install exit 0
