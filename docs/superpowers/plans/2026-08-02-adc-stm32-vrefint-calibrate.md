@@ -2,14 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** On top of Part 1's ADC `vref_get` / `vref_set` API, make `adc_stm32` measure VREF+ from VREFINT, cache it SoC-wide, and expose it through `adc_ref_internal()` / `adc_ref_internal_set()`.
+**Goal:** On top of Part 1's optional `ref_internal_get` driver op, make `adc_stm32` measure VREF+ from VREFINT, cache it SoC-wide, and expose it through `adc_ref_internal()`.
 
-**Architecture:** Kconfig-gated feature reuses `st,stm32-vref` DT (channel, cal, shift) inside `adc_stm32` (no sensor-driver calls). Shared mutex-protected rail cache; all STM32 ADC instances install the same get/set ops; only the VREFINT-owning ADC measures at init and on `sequence.calibrate`. App set on any instance updates the cache; owner calibrate overwrites. Measure failure keeps DT fallback; ADC init still succeeds.
+**Architecture:** Kconfig-gated feature reuses `st,stm32-vref` DT (channel, cal, shift) inside `adc_stm32` (no sensor-driver calls). Shared mutex-protected rail cache; all STM32 ADC instances install the same `ref_internal_get` op; only the VREFINT-owning ADC measures at init and on `sequence.calibrate`. Owner calibrate overwrites the cache. Measure failure keeps DT fallback; ADC init still succeeds.
 
 **Tech Stack:** `drivers/adc/adc_stm32.c`, STM32 LL ADC VREFINT path, existing `stm32_vref` sensor as formula reference, twister on STM32 `platform_allow` boards, west/`uv run`.
 
-**Spec:** `docs/superpowers/specs/2026-07-18-stm32-adc-vrefint-dynamic-ref-design.md` (§§6–11).
-**Depends on:** Part 1 branch/plan `docs/superpowers/plans/2026-08-01-adc-vref-runtime-api.md` (`adc-vref-runtime-api`).
+**Spec:** `docs/superpowers/specs/2026-08-05-adc-ref-internal-get-design.md` (Part 1 API);
+`docs/superpowers/specs/2026-07-18-stm32-adc-vrefint-dynamic-ref-design.md` (§§6–11 STM32 mechanics).
+**Depends on:** Part 1 branch/plan `docs/superpowers/plans/2026-08-05-adc-ref-internal-get.md` (`adc-vref-runtime-api`).
 
 ## Global Constraints
 
@@ -36,8 +37,8 @@
 - **Compliance:** Before handoff, run `./scripts/ci/check_compliance.py -c <commit-range>` from `deps/zephyr` (see [Running CI Tests Locally](https://docs.zephyrproject.org/latest/contribute/guidelines.html#running-ci-tests-locally)). Fix reported issues.
 - **Upstream PR (human):** Agent does not open PRs unless asked. When the human prepares upstream PRs: rewrite/add `Signed-off-by` (DCO; legal name + real email matching Git author), keep `Assisted-by:`, reference the RFC in the PR body, watch CI. See [Contribution Guidelines](https://docs.zephyrproject.org/latest/contribute/guidelines.html).
 - **Formal tests & samples:** Live in `deps/zephyr`. Workspace repo is for interactive hacking/debugging only.
-- **v1 STM32 contract:** Only `ADC_REF_INTERNAL` supported via `vref_*`; other enums → get `0`, set `-ENOTSUP`; set `0` → `-EINVAL`; getter returns DT `vref-mv` when cache invalid.
-- **Out of scope:** Public `adc_vref_*`; non-internal DT routing; channel-id API; removing `st,stm32-vref` sensor; auto re-measure on PM resume.
+- **v1 STM32 contract:** Optional `ref_internal_get` only; getter returns DT `vref-mv` when cache invalid; no public or driver-api setter.
+- **Out of scope:** Public `adc_ref_internal_set()` / `adc_vref_*`; enum-keyed `vref_get`/`vref_set`; non-internal DT routing; channel-id API; removing `st,stm32-vref` sensor; auto re-measure on PM resume.
 - **Build:** `ZEPHYR_BASE=…/deps/zephyr`, `uv run west …`. Prefer a Nucleo (or similar) with `vref:` in SoC DT for integration tests.
 
 ---
@@ -47,11 +48,11 @@
 | Path | Role |
 |---|---|
 | `deps/zephyr/drivers/adc/Kconfig.stm32` | `ADC_STM32_VREFINT_CALIBRATE` |
-| `deps/zephyr/drivers/adc/adc_stm32.c` | Cache, measure, get/set, init/calibrate hooks, per-instance `vref-mv`, stream live vref |
+| `deps/zephyr/drivers/adc/adc_stm32.c` | Cache, measure, `ref_internal_get`, init/calibrate hooks, per-instance `vref-mv`, stream live vref |
 | `deps/zephyr/dts/bindings/adc/st,stm32-adc.yaml` | Clarify `vref-mv` as fallback |
 | `deps/zephyr/dts/bindings/sensor/st,stm32-vref.yaml` | Note ADC may consume node for cal |
 | `deps/zephyr/tests/drivers/adc/…` (new or extended) | STM32 integration cases from spec §8.2 |
-| `deps/zephyr/samples/drivers/adc/adc_dt/` and/or sequence | Exercise measured/set path on STM32 overlay |
+| `deps/zephyr/samples/drivers/adc/adc_dt/` and/or sequence | Exercise measured getter path on STM32 overlay |
 | `deps/zephyr/samples/sensor/soc_voltage/README.rst` | Short cross-link |
 | `deps/zephyr/doc/releases/migration-guide-4.5.rst` (or current) | Default mV may change |
 | `deps/zephyr/doc/releases/release-notes-*.rst` | Driver/feature note if needed beyond Part 1 API entry |
@@ -73,7 +74,7 @@
 ```bash
 cd /home/lasse/projects/zephyr-devel/deps/zephyr
 git switch adc-vref-runtime-api
-rg -n "vref_get|adc_ref_internal_set" include/zephyr/drivers/adc.h | head
+rg -n "ref_internal_get" include/zephyr/drivers/adc.h | head
 ```
 
 Expected: symbols exist.
@@ -88,7 +89,7 @@ git switch -c adc-stm32-vrefint-calibrate
 
 ---
 
-### Task 2: Kconfig + shared cache + get/set stubs
+### Task 2: Kconfig + shared cache + ref_internal_get stub
 
 **Files:**
 - Modify: `deps/zephyr/drivers/adc/Kconfig.stm32`
@@ -96,8 +97,8 @@ git switch -c adc-stm32-vrefint-calibrate
 - Test: compile with feature on/off (later tasks)
 
 **Interfaces:**
-- Consumes: Part 1 `vref_get` / `vref_set`
-- Produces: `CONFIG_ADC_STM32_VREFINT_CALIBRATE`; `stm32_adc_vref` cache; INTERNAL-only get/set when enabled
+- Consumes: Part 1 `ref_internal_get`
+- Produces: `CONFIG_ADC_STM32_VREFINT_CALIBRATE`; `stm32_adc_vref` cache; `ref_internal_get` when enabled
 
 - [ ] **Step 1: Add Kconfig**
 
@@ -111,8 +112,7 @@ config ADC_STM32_VREFINT_CALIBRATE
 	  Measure the ADC reference rail (VREF+/VDDA) using the VREFINT
 	  channel and factory calibration described by the st,stm32-vref
 	  node. The value is cached SoC-wide and returned by
-	  adc_ref_internal() for all STM32 ADC instances. Applications may
-	  override it with adc_ref_internal_set(). Re-measure when
+	  adc_ref_internal() for all STM32 ADC instances. Re-measure when
 	  sequence.calibrate is set on the VREFINT-owning ADC.
 ```
 
@@ -125,14 +125,9 @@ static struct {
 	bool valid;
 } stm32_adc_vref;
 
-static uint16_t adc_stm32_vref_get(const struct device *dev,
-				   enum adc_reference reference)
+static uint16_t adc_stm32_ref_internal_get(const struct device *dev)
 {
-	const struct adc_stm32_cfg *cfg = dev->config; /* use real cfg type name */
-
-	if (reference != ADC_REF_INTERNAL) {
-		return 0;
-	}
+	const struct adc_stm32_cfg *cfg = dev->config;
 
 	k_mutex_lock(&stm32_adc_vref.lock, K_FOREVER);
 	uint16_t out = stm32_adc_vref.valid ? stm32_adc_vref.mv : cfg->vref_mv;
@@ -140,35 +135,14 @@ static uint16_t adc_stm32_vref_get(const struct device *dev,
 
 	return out;
 }
-
-static int adc_stm32_vref_set(const struct device *dev,
-			      enum adc_reference reference,
-			      uint16_t vref_mv)
-{
-	ARG_UNUSED(dev);
-
-	if (reference != ADC_REF_INTERNAL) {
-		return -ENOTSUP;
-	}
-	if (vref_mv == 0) {
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&stm32_adc_vref.lock, K_FOREVER);
-	stm32_adc_vref.mv = vref_mv;
-	stm32_adc_vref.valid = true;
-	k_mutex_unlock(&stm32_adc_vref.lock);
-
-	return 0;
-}
 ```
 
 Initialize the mutex once (`K_MUTEX_DEFINE` or owner init).
 
-- [ ] **Step 3: Per-instance DT fallback + install ops when calibrate Kconfig is on**
+- [ ] **Step 3: Per-instance DT fallback + install getter when calibrate Kconfig is on**
 
 Clarify: “feature on” means `CONFIG_ADC_STM32_VREFINT_CALIBRATE=y` (Step 1). That
-symbol enables the **full** STM32 dynamic-ref path — install `vref_get`/`vref_set`,
+symbol enables the **full** STM32 dynamic-ref path — install `ref_internal_get`,
 measure at init, and refresh on owner `sequence.calibrate` — not only the
 sequence flag.
 
@@ -177,11 +151,11 @@ Today `STM32_ADC_VREF_MV` is `DT_INST_PROP(0, vref_mv)` and a single shared
 (`vref-mv` remains optional in the binding with default 3300):
 
 - Store `vref_mv` in each instance's config from `DT_INST_PROP(n, vref_mv)`.
-- When `CONFIG_ADC_STM32_VREFINT_CALIBRATE=y`: set `.vref_get` / `.vref_set` on
-  every instance's API; `.ref_internal` = that instance's DT value (getter uses
-  config / cache).
-- When the Kconfig is `n`: leave `vref_*` NULL; `.ref_internal` = per-instance DT
-  value (fixes the inst-0 quirk for the static path too).
+- When `CONFIG_ADC_STM32_VREFINT_CALIBRATE=y`: set `.ref_internal_get =
+  adc_stm32_ref_internal_get` on every instance's API; `.ref_internal` = that
+  instance's DT value (getter uses config / cache).
+- When the Kconfig is `n`: leave `ref_internal_get` NULL; `.ref_internal` =
+  per-instance DT value (fixes the inst-0 quirk for the static path too).
 
 Prefer per-instance `DEVICE_API` macros if a single shared API struct cannot hold
 per-instance `ref_internal`.
@@ -197,9 +171,9 @@ instance 0’s value. After this change, each instance reports its own property
 cd /home/lasse/projects/zephyr-devel/deps/zephyr
 git add drivers/adc/Kconfig.stm32 drivers/adc/adc_stm32.c
 git commit -m "$(cat <<'EOF'
-drivers: adc_stm32: add vref cache and optional get/set ops
+drivers: adc_stm32: add vref cache and ref_internal_get
 
-Introduce Kconfig-gated shared VREF+ cache wired to the ADC vref API,
+Introduce Kconfig-gated shared VREF+ cache wired to ref_internal_get,
 with per-instance DT vref-mv as fallback.
 
 Tested with: west build -b <stm32_board_with_vref> for an ADC sample/app
@@ -303,7 +277,7 @@ behavior):
    With `CONFIG_ADC_STM32_VREFINT_CALIBRATE=y` (default when `st,stm32-vref` is
    present), `adc_ref_internal()` and INTERNAL raw→mV helpers may no longer match
    DT `vref-mv` / 3300 exactly. Disable the Kconfig to keep static DT-only scale
-   (also disables get/set and init/`sequence.calibrate` VREFINT refresh).
+   (also disables `ref_internal_get` and init/`sequence.calibrate` VREFINT refresh).
 
 2. **Breaking: per-instance `vref-mv`**  
    `adc_ref_internal()` no longer forces every STM32 ADC instance to instance 0’s
@@ -359,9 +333,8 @@ Cover:
 
 1. After boot, `adc_ref_internal(adc)` ≈ `st,stm32-vref` sensor reading (± tolerance).
 2. If two ADCs enabled: both getters return the same cached value.
-3. `adc_ref_internal_set` on non-owner updates both getters / INTERNAL mV conversion.
-4. `sequence.calibrate` on owner overwrites a prior set.
-5. With `CONFIG_ADC_STM32_VREFINT_CALIBRATE=n`: set → `-ENOTSUP`; get uses DT only.
+3. `sequence.calibrate` on owner refreshes the cached value.
+4. With `CONFIG_ADC_STM32_VREFINT_CALIBRATE=n`: no `ref_internal_get`; `adc_ref_internal()` uses static DT `ref_internal` only.
 
 Use ztest + DT fixtures; skip gracefully if sensor or second ADC absent on a board (or split yaml scenarios).
 
@@ -386,7 +359,7 @@ git add tests/drivers/adc/
 git commit -m "$(cat <<'EOF'
 tests: adc_stm32: cover VREFINT-calibrated adc_ref_internal
 
-Verify shared cache, set/calibrate overwrite, and Kconfig off behavior.
+Verify shared cache, calibrate refresh, and Kconfig off behavior.
 
 Tested with: west twister -T tests/drivers/adc/<new_or_existing> -p <platform_from_yaml>
 
@@ -445,8 +418,8 @@ Remind the human: add `Signed-off-by:` before upstream push, keep `Assisted-by:`
 
 | Spec item | Task |
 |---|---|
-| Kconfig + install get/set | Task 2 |
-| Shared cache / INTERNAL-only | Task 2 |
+| Kconfig + install ref_internal_get | Task 2 |
+| Shared cache / getter-only | Task 2 |
 | Measure formula / init / calibrate | Task 3 |
 | Stream live vref / no PM auto refresh | Task 3 |
 | Bindings + migration + samples | Task 4 |
