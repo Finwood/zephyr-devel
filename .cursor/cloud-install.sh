@@ -7,10 +7,8 @@
 #   <parent>/zephyr-devel        ← west manifest / T2 workspace
 #   <parent>/zephyr-devel/deps/zephyr → symlink to sibling zephyr
 #
-# Dashboard install field can be:
-#   bash "$PWD/.cursor/cloud-install.sh"
-# when the install cwd is zephyr-devel, or the discover block in
-# docs/superpowers/cloud-environment.md.
+# Invoked by .cursor/environment.json (repo-file managed). The dashboard still
+# selects the zephyr + zephyr-devel repo group; that is not expressible here.
 
 set -euo pipefail
 
