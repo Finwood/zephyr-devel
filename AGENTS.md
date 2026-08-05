@@ -20,9 +20,12 @@ This repo is a **Zephyr T2 workspace** (west manifest repo + the `zephyr-devel` 
 `west`. There is no web server or database. Standard setup steps live in `README.md`; only the
 non-obvious, durable notes are captured here.
 
-Cloud Environment setup (dashboard install, Builds, sibling wiring) is documented in
-[`docs/superpowers/cloud-environment.md`](docs/superpowers/cloud-environment.md). The install
-script is [`.cursor/cloud-install.sh`](.cursor/cloud-install.sh).
+Cloud Environment setup is committed at [`.cursor/environment.json`](.cursor/environment.json)
+(runs [`.cursor/cloud-install.sh`](.cursor/cloud-install.sh)). Details:
+[`docs/superpowers/cloud-environment.md`](docs/superpowers/cloud-environment.md).
+
+The **repo group** (sibling checkouts of `zephyr` + `zephyr-devel`) is still selected in the
+dashboard environment; that part is not expressible in `environment.json`.
 
 ### Two-repo layout
 

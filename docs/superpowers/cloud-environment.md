@@ -1,38 +1,21 @@
 # Cursor Cloud Environment (zephyr + zephyr-devel)
 
-Dashboard environment (multi-repo): both `github.com/finwood/zephyr` and
-`github.com/finwood/zephyr-devel` must be selected. Config is **dashboard-managed**
-(no committed `.cursor/environment.json`).
+Config is committed at [`.cursor/environment.json`](../../.cursor/environment.json)
+and runs [`.cursor/cloud-install.sh`](../../.cursor/cloud-install.sh).
 
-Environment page:
+The **repo group** (which repos are cloned as siblings) still lives in the
+dashboard multi-repo environment:
+
 https://cursor.com/dashboard/cloud-agents/environments/e/c8ff0cfd-904d-11f1-a7d1-d6b4613131ce
 
-## Install script
+Both `github.com/finwood/zephyr` and `github.com/finwood/zephyr-devel` must be
+selected there. `repositoryDependencies` is not used for cloning siblings.
 
-Canonical install lives at [`.cursor/cloud-install.sh`](../../.cursor/cloud-install.sh).
+## Repo-file config
 
-Paste this into the environment **Install** field:
-
-```bash
-set -euo pipefail
-SCRIPT=""
-for c in \
-  "$PWD/.cursor/cloud-install.sh" \
-  "$PWD/zephyr-devel/.cursor/cloud-install.sh" \
-  "$PWD/repos/zephyr-devel/.cursor/cloud-install.sh" \
-  "/agent/repos/zephyr-devel/.cursor/cloud-install.sh" \
-  "/workspace/zephyr-devel/.cursor/cloud-install.sh"
-do
-  if [ -f "$c" ]; then SCRIPT="$c"; break; fi
-done
-if [ -z "$SCRIPT" ]; then
-  echo "cloud-install.sh not found; is zephyr-devel checked out?" >&2
-  exit 1
-fi
-bash "$SCRIPT"
-```
-
-Leave **Start** empty (no long-lived services). No ports/terminals required.
+`.cursor/environment.json` in **zephyr-devel** (not Finwood/zephyr) wins over
+personal/team dashboard install scripts when present. Keep Start empty — no
+long-lived services or ports.
 
 ## What install does
 
@@ -45,9 +28,12 @@ Leave **Start** empty (no long-lived services). No ports/terminals required.
 
 ## Builds
 
-After the install script is on `zephyr-devel` **main**, trigger a Build **without**
-per-repo ref overrides so it is promotable. Draft/test builds may use a feature
-branch ref for `zephyr-devel` only.
+After this lands on `zephyr-devel` **main**, trigger a Build **without** per-repo
+ref overrides so it is promotable. Draft/test builds may point `zephyr-devel` at
+a feature branch via `refs`.
+
+Repo-file managed environments cannot use `environment_json` overrides on
+`trigger-environment-build`; test config changes by building the feature branch.
 
 Validated draft build (feature-branch refs, not promotable):
 `bld-20260805-d95578d7-af58-442d-90fb-e436a46e0c69` — install exit 0 (apt, uv,
