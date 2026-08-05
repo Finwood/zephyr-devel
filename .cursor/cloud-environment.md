@@ -20,11 +20,30 @@ long-lived services or ports.
 ## What install does
 
 1. Ensures apt build deps (`ninja`, `dtc`, `gperf`, `ccache`, `gcc-multilib`, …) and `uv`
-2. Symlinks `zephyr-devel/deps/zephyr` → sibling `zephyr` checkout
-3. Seeds west `refs/heads/manifest-rev`, runs `uv sync` + `west update`
-4. Restores the sibling zephyr SHA/branch if west detached it
-5. Writes `ZEPHYR_*` exports into `~/.bashrc`
-6. Installs Zephyr SDK under `/opt` (`x86_64-zephyr-elf` + `arm-zephyr-eabi`) when missing
+2. Locates the sibling Finwood/`zephyr` checkout (must look like a real Zephyr
+   tree: `VERSION` / `SDK_VERSION` / `west.yml` — not `zephyr-devel`'s module
+   entrypoint at `./zephyr/`)
+3. Symlinks `zephyr-devel/deps/zephyr` → that sibling
+4. Seeds west `refs/heads/manifest-rev`, runs `uv sync` + `west update`
+5. Restores the sibling zephyr SHA/branch if west detached it
+6. Writes `ZEPHYR_*` exports into `~/.bashrc`
+7. Installs Zephyr SDK under `/opt` (`x86_64-zephyr-elf` + `arm-zephyr-eabi`) when missing
+
+### Failure mode (fixed): wrong `deps/zephyr` target
+
+West places the `zephyr` project at `deps/zephyr` because `import: path-prefix: deps`
+prefixes the importing project path. If install mistook `zephyr-devel/zephyr/`
+(module stub with `CMakeLists.txt`) for the sibling checkout, it symlinked
+`deps/zephyr` there; `west update` then failed with:
+
+```text
+error: The following untracked working tree files would be overwritten by checkout:
+	CMakeLists.txt
+FATAL ERROR: command exited with status 1: checkout --detach refs/heads/manifest-rev
+```
+
+`find_repo` now prefers `/agent/repos/zephyr` (and other sibling locations) and
+requires Zephyr tree markers before accepting a `zephyr` candidate.
 
 ## Builds
 

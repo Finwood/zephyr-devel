@@ -14,28 +14,58 @@ set -euo pipefail
 
 log() { printf 'cloud-install: %s\n' "$*"; }
 
+# True if $2 looks like a checkout of repo $1.
+# For "zephyr", require real Zephyr tree markers — zephyr-devel ships a module
+# entrypoint at ./zephyr/ (CMakeLists.txt + module.yml) that must not win.
+is_repo_candidate() {
+	local name="$1"
+	local d="$2"
+	[[ -n "$d" && -d "$d" ]] || return 1
+	if [[ "$name" == "zephyr" ]]; then
+		[[ -f "$d/VERSION" || -f "$d/SDK_VERSION" || -f "$d/west.yml" ]]
+		return $?
+	fi
+	[[ -d "$d/.git" || -f "$d/west.yml" || -f "$d/CMakeLists.txt" ]]
+}
+
 find_repo() {
 	local name="$1"
 	local d
+	local parent
+	parent="$(dirname "$PWD")"
+	# Prefer multi-repo sibling checkouts over $PWD/<name>. When install cwd is
+	# zephyr-devel, $PWD/zephyr is the module stub, not Finwood/zephyr.
 	for d in \
 		"${CURSOR_REPO_DIR:-}/$name" \
-		"$PWD/$name" \
-		"$PWD/repos/$name" \
 		"/agent/repos/$name" \
 		"/workspace/$name" \
-		"/workspace/repos/$name"
+		"/workspace/repos/$name" \
+		"${parent}/$name" \
+		"$PWD/repos/$name" \
+		"$PWD/$name"
 	do
-		if [[ -n "$d" && -d "$d" && ( -d "$d/.git" || -f "$d/west.yml" || -f "$d/CMakeLists.txt" ) ]]; then
+		if is_repo_candidate "$name" "$d"; then
 			printf '%s\n' "$d"
 			return 0
 		fi
 	done
 	# If cwd itself is the repo
-	if [[ "$(basename "$PWD")" == "$name" ]] && [[ -d "$PWD/.git" || -f "$PWD/west.yml" ]]; then
+	if [[ "$(basename "$PWD")" == "$name" ]] && is_repo_candidate "$name" "$PWD"; then
 		printf '%s\n' "$PWD"
 		return 0
 	fi
 	return 1
+}
+
+# Remove a nested .git left under zephyr-devel/zephyr/ by a prior failed west
+# update that mistook the module entrypoint for the Zephyr project path.
+scrub_module_zephyr_git() {
+	local devel="$1"
+	local stub="${devel}/zephyr"
+	if [[ -d "${stub}/.git" && -f "${stub}/module.yml" && ! -f "${stub}/VERSION" ]]; then
+		log "removing nested .git under module entrypoint ${stub}"
+		rm -rf "${stub}/.git"
+	fi
 }
 
 ensure_uv() {
@@ -209,6 +239,7 @@ main() {
 	log "zephyr-devel=${devel}"
 	log "zephyr=${zephyr}"
 
+	scrub_module_zephyr_git "$devel"
 	wire_sibling_zephyr "$devel" "$zephyr"
 
 	local zephyr_sha zephyr_branch
