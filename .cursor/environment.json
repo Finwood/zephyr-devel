@@ -1,0 +1,4 @@
+{
+  "name": "Zephyr T2 (zephyr + zephyr-devel)",
+  "install": "set -euo pipefail\nSCRIPT=\"\"\nfor c in \"$PWD/.cursor/cloud-install.sh\" \"$PWD/zephyr-devel/.cursor/cloud-install.sh\" \"$PWD/repos/zephyr-devel/.cursor/cloud-install.sh\" \"/agent/repos/zephyr-devel/.cursor/cloud-install.sh\" \"/workspace/zephyr-devel/.cursor/cloud-install.sh\"; do\n  if [ -f \"$c\" ]; then SCRIPT=\"$c\"; break; fi\ndone\nif [ -z \"$SCRIPT\" ]; then\n  echo \"cloud-install.sh not found; is zephyr-devel checked out?\" >&2\n  exit 1\nfi\necho \"cloud-install: running $SCRIPT\"\nbash \"$SCRIPT\"\n"
+}
