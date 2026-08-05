@@ -48,3 +48,7 @@ Leave **Start** empty (no long-lived services). No ports/terminals required.
 After the install script is on `zephyr-devel` **main**, trigger a Build **without**
 per-repo ref overrides so it is promotable. Draft/test builds may use a feature
 branch ref for `zephyr-devel` only.
+
+Validated draft build (feature-branch refs, not promotable):
+`bld-20260805-d95578d7-af58-442d-90fb-e436a46e0c69` — install exit 0 (apt, uv,
+sibling symlink, west update, SDK 1.0.1).
