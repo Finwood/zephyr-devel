@@ -364,5 +364,7 @@ for explicit voltage channels.
   cache-at-init/`calibrate` approach was later endorsed by `ZhaoxiangJin`.
   Call out default-on measured mV and the lock-free conversion path in the
   upstream PR body.
-- Stack Part 2 on upstream `main` after [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439)
-  merges; until then, stack on `cursor/adc-vref-runtime-api-c2e3`.
+- Stack Part 2 on a **`cursor/`-prefixed** branch from upstream `main` after
+  [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439) merges;
+  until then, stack on `cursor/adc-vref-runtime-api-c2e3`. Cloud Agents need
+  that prefix to access GitHub PRs; the descriptive suffix is not a hard name.

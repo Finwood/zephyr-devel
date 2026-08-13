@@ -15,7 +15,7 @@
 ## Global Constraints
 
 - **Work tree:** Edit upstream code/tests/docs/samples only in `deps/zephyr/` (west-managed).
-- **Branch (Part 2):** `adc-stm32-vrefint-calibrate`, created from a Zephyr revision that already has `adc_ref_get` in `include/zephyr/drivers/adc.h`. After [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439) merges, use Finwood/`upstream` `main`. Until then, stack on `cursor/adc-vref-runtime-api-c2e3`.
+- **Branch (Part 2):** Create a **`cursor/`-prefixed** branch from a Zephyr revision that already has `adc_ref_get` in `include/zephyr/drivers/adc.h`. Cursor Cloud Agents need (or strongly prefer) that prefix in both `zephyr-devel` and the sibling `zephyr` checkout; without it they have trouble accessing GitHub PRs. Do **not** require one exact name — `cursor/adc-stm32-vrefint-calibrate` is an example; Cloud may append a short suffix (e.g. `-9df2`). After [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439) merges, branch from Finwood/`upstream` `main`. Until then, stack on `cursor/adc-vref-runtime-api-c2e3`.
 - **Commits:** Do **not** use `git commit -s`, `--signoff`, or `Signed-off-by`. Human prepares DCO/upstream history later.
 - **AI attribution:** Every commit in `deps/zephyr` that an AI agent helped author **must** include an `Assisted-by:` trailer per Zephyr’s [Usage disclosure and attribution](https://docs.zephyrproject.org/latest/contribute/guidelines.html#usage-disclosure-and-attribution):
 
@@ -67,7 +67,7 @@
 
 **Interfaces:**
 - Consumes: Zephyr revision with `adc_ref_get` / `adc_api_ref_get` in `include/zephyr/drivers/adc.h`
-- Produces: branch `adc-stm32-vrefint-calibrate`
+- Produces: a `cursor/`-prefixed Part 2 branch (example `cursor/adc-stm32-vrefint-calibrate`; Cloud suffix OK)
 
 - [ ] **Step 1: Verify Part 1 is present**
 
@@ -79,10 +79,12 @@ rg -n "adc_api_ref_get|adc_ref_get" include/zephyr/drivers/adc.h | head
 
 Expected: `typedef int (*adc_api_ref_get)` and `static inline int adc_ref_get(` exist. If missing, check out `cursor/adc-vref-runtime-api-c2e3` or wait for [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439) to merge, then retry.
 
-- [ ] **Step 2: Create Part 2 branch**
+- [ ] **Step 2: Create a `cursor/`-prefixed Part 2 branch**
 
 ```bash
-git switch -c adc-stm32-vrefint-calibrate
+# Example name; use the session-assigned cursor/<name>-<suffix> if Cloud
+# already created one. Do not drop the cursor/ prefix.
+git switch -c cursor/adc-stm32-vrefint-calibrate
 ```
 
 - [ ] **Step 3: Commit N/A**

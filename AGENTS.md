@@ -27,6 +27,15 @@ Cloud Environment setup is committed at [`.cursor/environment.json`](.cursor/env
 The **repo group** (sibling checkouts of `zephyr` + `zephyr-devel`) is still selected in the
 dashboard environment; that part is not expressible in `environment.json`.
 
+### GitHub PRs and branch names
+
+Cursor Cloud Agents need (or strongly prefer) branches whose names start with
+`cursor/` in **both** this repo and the sibling `zephyr` checkout. Without that
+prefix they have trouble accessing GitHub PRs. Implementation plans should
+prefer `cursor/<descriptive-name>` and must **not** require a single exact
+branch name (Cloud may append a short suffix). Upstream Zephyr PRs can keep
+that name on the Finwood fork; the human rewrites/DCO as needed.
+
 ### Two-repo layout
 
 Cloud Agents use a **multi-repo** environment with sibling checkouts, typically:
