@@ -1,7 +1,17 @@
 # STM32 ADC Dynamic VREF+ via VREFINT — Design
 
+> **Superseded** by `docs/superpowers/specs/2026-08-13-adc-ref-get-stm32-vrefint-design.md`
+> and plan `docs/superpowers/plans/2026-08-13-adc-stm32-vrefint-calibrate.md`.
+>
+> The common-API shape here (`vref_get` / `vref_set` + public
+> `adc_ref_internal_set()`) did **not** land. Upstream PR
+> [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439) shipped
+> enum-keyed `adc_ref_get()` with no setter. STM32 measurement mechanics in
+> §§6–8 are still useful background but are restated (and rewired) in the
+> 2026-08-13 spec. Keep this file for historical context only — do not execute.
+
 - **Date:** 2026-07-18 (API shape revised 2026-08-02)
-- **Status:** Approved design (pre-implementation)
+- **Status:** Superseded (historical)
 - **Scope:** Zephyr ADC common API extension + `adc_stm32` driver support for
   measured / runtime-configurable internal reference millivolts
 - **Upstream target:** `zephyrproject-rtos/zephyr` (design captured here for

@@ -1,5 +1,11 @@
 # STM32 ADC VREFINT Calibrate (Part 2) Implementation Plan
 
+> **Superseded** by `docs/superpowers/plans/2026-08-13-adc-stm32-vrefint-calibrate.md`
+> (spec `docs/superpowers/specs/2026-08-13-adc-ref-get-stm32-vrefint-design.md`).
+>
+> This plan still installs `vref_get`/`vref_set` and tests
+> `adc_ref_internal_set()`. That API did not land. Do **not** execute.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** On top of Part 1's ADC `vref_get` / `vref_set` API, make `adc_stm32` measure VREF+ from VREFINT, cache it SoC-wide, and expose it through `adc_ref_internal()` / `adc_ref_internal_set()`.

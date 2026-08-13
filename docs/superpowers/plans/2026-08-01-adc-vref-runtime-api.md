@@ -1,5 +1,13 @@
 # ADC Runtime Vref API (Part 1) Implementation Plan
 
+> **Superseded / completed.** Part 1 landed as upstream PR
+> [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439), but **not**
+> with this plan’s `vref_get`/`vref_set` + `adc_ref_internal_set()` shape.
+> Review replaced that with enum-keyed `adc_ref_get()` and no setter.
+> Do **not** execute this plan. Current Part 2 plan:
+> `docs/superpowers/plans/2026-08-13-adc-stm32-vrefint-calibrate.md`.
+> Spec: `docs/superpowers/specs/2026-08-13-adc-ref-get-stm32-vrefint-design.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add optional enum-keyed `vref_get` / `vref_set` to the Zephyr ADC driver API, with public INTERNAL shorthands `adc_ref_internal()` / `adc_ref_internal_set()`, plus emul + tests + docs — no vendor driver behavior change.
