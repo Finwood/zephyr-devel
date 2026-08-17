@@ -1,9 +1,17 @@
 # DRAFT — Zephyr PR / RFC: Runtime-configurable ADC internal reference
 
-> **Status:** Draft for upstream `zephyrproject-rtos/zephyr` (not submitted yet)  
+> **Superseded.** The RFC was filed as
+> [#113971](https://github.com/zephyrproject-rtos/zephyr/issues/113971). Part 1
+> landed as [#115439](https://github.com/zephyrproject-rtos/zephyr/pull/115439)
+> (`adc_ref_get`, no public setter). Current design of record:
+> `docs/superpowers/specs/2026-08-13-adc-ref-get-stm32-vrefint-design.md`.
+> Keep this file for historical context only.
+
+> **Status:** Historical draft (API names in this file are stale)  
 > **Intended labels:** `RFC`, `area: ADC`, `API`  
 > **Related design (implementation detail):**  
-> `docs/superpowers/specs/2026-07-18-stm32-adc-vrefint-dynamic-ref-design.md`  
+> Historical: `docs/superpowers/specs/2026-07-18-stm32-adc-vrefint-dynamic-ref-design.md`  
+> Current: `docs/superpowers/specs/2026-08-13-adc-ref-get-stm32-vrefint-design.md`  
 > **Upstream process notes:** Zephyr does not ship a GitHub `PULL_REQUEST_TEMPLATE.md`.
 > Substantial API surface changes should follow the [RFC / Proposal][rfc-form]
 > issue form and [Contributor Expectations][contrib-expect] (PR description with
