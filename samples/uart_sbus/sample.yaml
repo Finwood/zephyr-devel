@@ -1,0 +1,12 @@
+sample:
+  name: UART to S.BUS converter
+tests:
+  sample.uart_sbus:
+    platform_allow:
+      - nucleo_g431kb
+    integration_platforms:
+      - nucleo_g431kb
+    build_only: true
+    tags:
+      - uart
+      - sbus

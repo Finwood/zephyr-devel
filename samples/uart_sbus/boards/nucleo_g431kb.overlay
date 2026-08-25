@@ -1,0 +1,35 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		uart-in = &usart1;
+		sbus-out = &usart2;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	fifo-enable;
+	interrupts = <37 0>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pb3>;
+	pinctrl-names = "default";
+	current-speed = <100000>;
+	parity = "even";
+	stop-bits = "2";
+	tx-invert;
+	fifo-enable;
+	interrupts = <38 1>;
+	status = "okay";
+};
+
+&lpuart1 {
+	interrupts = <91 2>;
+};

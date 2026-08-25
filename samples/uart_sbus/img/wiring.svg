@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 760" role="img">
+<title>Nucleo-32 G431KB pinout for UART to S.BUS wiring</title>
+<desc>USB at top. Left header top to bottom D1 through D12. Use D7 for UART in, D3 for S.BUS out, GND common.</desc>
+<rect width="780" height="760" fill="#f7fafc"/>
+<rect x="260" y="70" width="260" height="620" rx="10" fill="#03234b" stroke="#021526" stroke-width="2"/>
+<rect x="355" y="56" width="70" height="28" rx="3" fill="#cbd5e0" stroke="#4a5568"/>
+<text x="390" y="118" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#ffffff">NUCLEO-32</text>
+<text x="390" y="136" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#90cdf4">STM32G431KB</text>
+<rect x="330" y="270" width="120" height="90" rx="4" fill="#1a202c"/>
+<text x="390" y="320" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#a0aec0">MCU</text>
+<circle cx="390" cy="654" r="12" fill="#c53030" stroke="#742a2a"/>
+<text x="390" y="676" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#e2e8f0">RESET</text>
+<text x="390" y="156" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#90cdf4">CN1 USB ST-LINK console</text>
+<circle cx="258" cy="158" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="162" font-family="sans-serif" font-size="11" fill="#e2e8f0">D1/TX</text>
+<circle cx="258" cy="192" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="196" font-family="sans-serif" font-size="11" fill="#e2e8f0">D0/RX</text>
+<circle cx="258" cy="226" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="230" font-family="sans-serif" font-size="11" fill="#e2e8f0">NRST</text>
+<circle cx="258" cy="260" r="5.5" fill="#4a5568" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="264" font-family="sans-serif" font-size="11" fill="#e2e8f0">GND</text>
+<circle cx="258" cy="294" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="298" font-family="sans-serif" font-size="11" fill="#e2e8f0">D2</text>
+<circle cx="258" cy="328" r="5.5" fill="#9f7aea" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="332" font-family="sans-serif" font-size="11" fill="#e2e8f0">D3</text>
+<circle cx="258" cy="362" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="366" font-family="sans-serif" font-size="11" fill="#e2e8f0">D4</text>
+<circle cx="258" cy="396" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="400" font-family="sans-serif" font-size="11" fill="#e2e8f0">D5</text>
+<circle cx="258" cy="430" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="434" font-family="sans-serif" font-size="11" fill="#e2e8f0">D6</text>
+<circle cx="258" cy="464" r="5.5" fill="#63b3ed" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="468" font-family="sans-serif" font-size="11" fill="#e2e8f0">D7</text>
+<circle cx="258" cy="498" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="502" font-family="sans-serif" font-size="11" fill="#e2e8f0">D8</text>
+<circle cx="258" cy="532" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="536" font-family="sans-serif" font-size="11" fill="#e2e8f0">D9</text>
+<circle cx="258" cy="566" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="570" font-family="sans-serif" font-size="11" fill="#e2e8f0">D10</text>
+<circle cx="258" cy="600" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="604" font-family="sans-serif" font-size="11" fill="#e2e8f0">D11</text>
+<circle cx="258" cy="634" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="276" y="638" font-family="sans-serif" font-size="11" fill="#e2e8f0">D12</text>
+<circle cx="522" cy="158" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="162" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">VIN</text>
+<circle cx="522" cy="192" r="5.5" fill="#4a5568" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="196" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">GND</text>
+<circle cx="522" cy="226" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="230" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">NRST</text>
+<circle cx="522" cy="260" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="264" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">+5V</text>
+<circle cx="522" cy="294" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="298" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A7</text>
+<circle cx="522" cy="328" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="332" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A6</text>
+<circle cx="522" cy="362" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="366" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A5</text>
+<circle cx="522" cy="396" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="400" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A4</text>
+<circle cx="522" cy="430" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="434" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A3</text>
+<circle cx="522" cy="464" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="468" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A2</text>
+<circle cx="522" cy="498" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="502" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A1</text>
+<circle cx="522" cy="532" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="536" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A0</text>
+<circle cx="522" cy="566" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="570" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">AREF</text>
+<circle cx="522" cy="600" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="604" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">+3V3</text>
+<circle cx="522" cy="634" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<text x="504" y="638" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">D13</text>
+<text x="276" y="682" font-family="sans-serif" font-size="10" fill="#90cdf4">CN4</text>
+<text x="504" y="682" text-anchor="end" font-family="sans-serif" font-size="10" fill="#90cdf4">CN3</text>
+<text x="244" y="175" text-anchor="end" font-family="sans-serif" font-size="12" fill="#718096">console (do not use)</text>
+<text x="244" y="260" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="700" fill="#4a5568">GND</text>
+<text x="536" y="192" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="700" fill="#4a5568">GND</text>
+<text x="244" y="328" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="700" fill="#6b46c1">S.BUS out</text>
+<text x="244" y="348" text-anchor="end" font-family="sans-serif" font-size="11" fill="#6b46c1">USART2 TX PB3 inv. 8E2</text>
+<text x="244" y="464" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="700" fill="#2b6cb0">UART in</text>
+<text x="244" y="484" text-anchor="end" font-family="sans-serif" font-size="11" fill="#2b6cb0">USART1 RX PB7</text>
+<text x="390" y="740" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4a5568">USB at top. Tie companion UART, Nucleo, and S.BUS GND together.</text>
+</svg>

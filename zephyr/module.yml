@@ -1,3 +1,5 @@
 name: zephyr-devel
+samples:
+  - samples
 tests:
   - tests
