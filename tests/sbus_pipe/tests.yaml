@@ -1,0 +1,8 @@
+tests:
+  sbus.pipe:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - sbus
