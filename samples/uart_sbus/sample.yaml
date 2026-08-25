@@ -4,8 +4,10 @@ tests:
   sample.uart_sbus:
     platform_allow:
       - nucleo_g431kb
+      - sbus_c031g6
     integration_platforms:
       - nucleo_g431kb
+      - sbus_c031g6
     build_only: true
     tags:
       - uart

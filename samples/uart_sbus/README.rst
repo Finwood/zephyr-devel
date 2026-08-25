@@ -5,7 +5,10 @@ Cut-through converter: bytes arriving on ordinary 115200 8N1 UART are
 emitted on an inverted 100 kbit/s 8E2 S.BUS UART. The sample does not
 parse S.BUS frames. Transmission starts on the first input byte.
 
-Supported board: ``nucleo_g431kb``.
+Supported boards: ``nucleo_g431kb`` and ``sbus_c031g6``.
+
+``sbus_c031g6`` is the intended custom hardware (STM32C031G6U6 UART→S.BUS
+PCB). Console on that board is **SEGGER RTT over SWD**, not a UART.
 
 Wiring (Nucleo-32 Arduino Nano header)
 **************************************
@@ -25,14 +28,33 @@ Wiring (Nucleo-32 Arduino Nano header)
 - Tie companion UART, Nucleo, and S.BUS device **GND** together.
 - Do not use D7 or D3: D7 is PF0 (OSC_IN) and D3 is PB0. Neither is a USART pin.
 
+Wiring (``sbus_c031g6``, STM32C031G6U6 UFQFPN-28)
+*************************************************
+
+- Console: SEGGER RTT via SWD (no spare USART for ST-Link VCP)
+- Input JST-GH: pin 1 NC, pin 2 USART1 RX **PB7 (package pin 27)**, pin 3 GND
+- S.BUS JST-GH: pin 1 5 V in, pin 2 USART2 TX inverted **PA4 (package pin 10)**,
+  pin 3 GND. 100000 8E2, hardware ``tx-invert``, idle low. No external inverter.
+
+See ``boards/finwood/sbus_c031g6/README.md`` for the full circuit, BOM, and
+STLINK-V3MINIE card-edge pinout.
+
 Building and flashing
 *********************
 
-.. code-block:: console
+Nucleo-G431KB::
 
    export ZEPHYR_BASE=$PWD/deps/zephyr
    uv run west build -b nucleo_g431kb -d /tmp/b_uart_sbus samples/uart_sbus
    uv run west flash -d /tmp/b_uart_sbus --runner openocd
+
+``sbus_c031g6``::
+
+   export ZEPHYR_BASE=$PWD/deps/zephyr
+   export ZEPHYR_SDK_INSTALL_DIR=/opt/
+   export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+   uv run west build -b sbus_c031g6 -d /tmp/b_sbus_c031g6 samples/uart_sbus
+   uv run west flash -d /tmp/b_sbus_c031g6
 
 Stats
 *****

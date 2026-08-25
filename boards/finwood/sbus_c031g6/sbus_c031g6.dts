@@ -1,0 +1,57 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/c0/stm32c031X6.dtsi>
+#include <st/c0/stm32c031g(4-6)ux-pinctrl.dtsi>
+
+/ {
+	model = "Finwood UART-S.BUS STM32C031G6U6";
+	compatible = "finwood,sbus-c031g6";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		uart-in = &usart1;
+		sbus-out = &usart2;
+	};
+};
+
+/* Cheap board: no HSE/LSE crystals. SoC HSI is 48 MHz, hsi-div = 1. */
+&clk_hsi {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+/* USART1 IRQ 27, priority 0 so input RX preempts S.BUS TX. */
+&usart1 {
+	pinctrl-0 = <&usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	fifo-enable;
+	interrupts = <27 0>;
+	status = "okay";
+};
+
+/* USART2 IRQ 28, priority 1. TX-only inverted S.BUS on PA4 (not PA14/SWCLK). */
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa4>;
+	pinctrl-names = "default";
+	current-speed = <100000>;
+	parity = "even";
+	stop-bits = "2";
+	tx-invert;
+	fifo-enable;
+	interrupts = <28 1>;
+	status = "okay";
+};

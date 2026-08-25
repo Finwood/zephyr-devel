@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Aliases and USART line coding live in the sbus_c031g6 board DTS.
+ * This overlay is kept so the sample has an explicit board file; the
+ * duplicate aliases match the board and are harmless.
+ */
+
+/ {
+	aliases {
+		uart-in = &usart1;
+		sbus-out = &usart2;
+	};
+};

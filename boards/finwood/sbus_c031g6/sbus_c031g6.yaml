@@ -1,0 +1,13 @@
+identifier: sbus_c031g6
+name: Finwood UART-S.BUS STM32C031G6U6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+ram: 12
+flash: 32
+vendor: finwood

@@ -1,0 +1,6 @@
+board:
+  name: sbus_c031g6
+  full_name: Finwood UART-S.BUS STM32C031G6U6
+  vendor: finwood
+  socs:
+    - name: stm32c031xx
