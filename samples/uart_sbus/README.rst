@@ -10,7 +10,10 @@ as a whole when a newer valid frame is committed.
 
 Pipeline internals (slots, cut-through, supersede): `PIPELINE.md <PIPELINE.md>`_.
 
-Supported board: ``nucleo_g431kb``.
+Supported boards: ``nucleo_g431kb`` and ``sbus_c031g6``.
+
+``sbus_c031g6`` is the intended custom hardware (STM32C031G6U6 UART→S.BUS
+PCB). Console on that board is **SEGGER RTT over SWD**, not a UART.
 
 Wiring (Nucleo-32 Arduino Nano header)
 **************************************
@@ -37,10 +40,24 @@ Wiring (Nucleo-32 Arduino Nano header)
 - Do not use A7 for the LED. A7 is PA2 (LPUART1 TX / ST-Link VCP) and is not
   5 V-tolerant.
 
+Wiring (``sbus_c031g6``, STM32C031G6U6 UFQFPN-28)
+*************************************************
+
+- Console: SEGGER RTT via SWD (no spare USART for ST-Link VCP)
+- Input JST-GH: pin 1 NC, pin 2 USART1 RX **PB7 (package pin 27)**, pin 3 GND
+- S.BUS JST-GH: pin 1 5 V in, pin 2 USART2 TX inverted **PA4 (package pin 10)**,
+  pin 3 GND. 100000 8E2, hardware ``tx-invert``, idle low. No external inverter.
+- Green activity: **PB8 (package pin 28)**, push-pull active-high (``led0``)
+- Red error: **PB4 (package pin 24)**, open-drain active-low (``led1``). Wire
+  **5 V** → ~330 Ω → LED anode → cathode to PB4.
+
+See ``boards/finwood/sbus_c031g6/README.md`` for the full circuit, BOM, and
+STLINK-V3MINIE card-edge pinout.
+
 Building and flashing
 *********************
 
-.. code-block:: console
+Nucleo-G431KB::
 
    export ZEPHYR_BASE=$PWD/deps/zephyr
    uv run west build -b nucleo_g431kb -d /tmp/b_uart_sbus samples/uart_sbus
@@ -52,6 +69,14 @@ Optional Futaba S.BUS2 slot footers (``0x04`` / ``0x14`` / ``0x24`` / ``0x34``):
 
 Default is classic S.BUS only (footer ``0x00``). Inter-window telemetry bytes
 are always dropped while hunting; they do not increment ``sync``.
+
+``sbus_c031g6``::
+
+   export ZEPHYR_BASE=$PWD/deps/zephyr
+   export ZEPHYR_SDK_INSTALL_DIR=/opt/
+   export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+   uv run west build -b sbus_c031g6 -d /tmp/b_sbus_c031g6 samples/uart_sbus
+   uv run west flash -d /tmp/b_sbus_c031g6
 
 Stats
 *****
