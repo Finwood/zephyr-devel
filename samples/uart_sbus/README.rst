@@ -12,16 +12,18 @@ Wiring (Nucleo-32 Arduino Nano header)
 
 .. figure:: img/wiring.svg
    :align: center
-   :alt: Nucleo-32 G431KB with USB at top. Left header CN4 from the USB end: D1, D0, NRST, GND, D2, D3 (S.BUS out), D4, D5, D6, D7 (UART in). Companion UART TX to D7, S.BUS from D3, GND common.
+   :alt: Nucleo-32 G431KB with USB at top. UART in on D0 (left header, 2nd pin).
+         S.BUS out on D13 (right header, last pin). Console is ST-Link USB, not D0/D1.
 
-   Nucleo-32 pinout (USB / ST-LINK at the top). Count down the left header (CN4):
-   D3 is the 6th pin (S.BUS out), D7 is the 10th pin (UART in), GND is the 4th.
+   Nucleo-32 pinout (USB / ST-LINK at the top) per ST UM2397. D0/D1 are USART1,
+   not the ST-Link VCP. VCP is LPUART1 on PA2/PA3, wired only to the debugger.
 
-- Console (ST-Link VCP): LPUART1 PA2/PA3 (D1/D0), 115200 8N1
-- Input: USART1 RX **PB7 (D7)**, 115200 8N1
-- S.BUS output: USART2 TX **PB3 (D3)**, 100000 8E2, hardware ``tx-invert``,
-  TX-only. Idle is low. No external inverter.
+- Console: ST-Link VCP (USB serial), LPUART1 PA2/PA3, 115200 8N1. Not Arduino D0/D1.
+- Input: USART1 RX **PA10 (Arduino D0, CN4 pin 2)**, 115200 8N1
+- S.BUS output: USART2 TX **PB3 (Arduino D13, CN3 pin 15)**, 100000 8E2,
+  hardware ``tx-invert``, TX-only. Idle is low. No external inverter.
 - Tie companion UART, Nucleo, and S.BUS device **GND** together.
+- Do not use D7 or D3: D7 is PF0 (OSC_IN) and D3 is PB0. Neither is a USART pin.
 
 Building and flashing
 *********************
@@ -30,7 +32,7 @@ Building and flashing
 
    export ZEPHYR_BASE=$PWD/deps/zephyr
    uv run west build -b nucleo_g431kb -d /tmp/b_uart_sbus samples/uart_sbus
-   uv run west flash -d /tmp/b_uart_sbus
+   uv run west flash -d /tmp/b_uart_sbus --runner openocd
 
 Stats
 *****

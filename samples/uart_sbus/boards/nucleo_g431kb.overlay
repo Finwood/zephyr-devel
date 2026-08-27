@@ -1,5 +1,12 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * NUCLEO-G431KB (UM2397) Arduino Nano mapping, not Nucleo-64:
+ *   ST-Link VCP is LPUART1 PA2/PA3 (not D0/D1).
+ *   UART in:  USART1 RX PA10 = D0 (CN4 pin 2).
+ *   S.BUS:    USART2 TX PB3  = D13 (CN3 pin 15).
+ * D7 is PF0 (OSC_IN) and D3 is PB0; neither is a USART pin.
+ * Default SB2 routes PB7 to A4, not to D4, so USART1_RX_PB7 is a trap.
  */
 
 / {
@@ -9,8 +16,12 @@
 	};
 };
 
+&usart1_rx_pa10 {
+	bias-pull-up;
+};
+
 &usart1 {
-	pinctrl-0 = <&usart1_rx_pb7>;
+	pinctrl-0 = <&usart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	fifo-enable;

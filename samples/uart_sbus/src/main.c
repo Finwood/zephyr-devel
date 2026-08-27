@@ -82,7 +82,7 @@ int main(void)
 	uart_irq_err_enable(uart_in);
 	uart_irq_rx_enable(uart_in);
 
-	printk("sbus: uart-in -> sbus-out cut-through\n");
+	printk("sbus: D0/PA10 115200 8N1 -> D13/PB3 S.BUS 100k 8E2\n");
 
 	for (;;) {
 		uint32_t rx;

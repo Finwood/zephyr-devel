@@ -52,11 +52,15 @@ decouples RX fill from TX drain. It does not parse S.BUS frames.
 
 ## 2. Physical layer and timing
 
-| Side | Baud | Frame | Invert | Direction | Nucleo-32 pin |
+| Side | Baud | Frame | Invert | Direction | Nucleo-32 pin (UM2397) |
 |---|---|---|---|---|---|
-| Console (unchanged) | 115200 | 8N1 | no | LPUART1 TX/RX | PA2 / PA3 (D1 / D0, ST-Link VCP) |
-| Input | 115200 | 8N1 | no | USART1 RX | PB7 (Arduino D7) |
-| S.BUS output | 100000 | 8E2 | yes (`tx-invert`) | USART2 TX | PB3 (Arduino D3) |
+| Console (unchanged) | 115200 | 8N1 | no | LPUART1 TX/RX | PA2 / PA3 (ST-Link VCP only, **not** Arduino D0/D1) |
+| Input | 115200 | 8N1 | no | USART1 RX | PA10 (Arduino **D0**, CN4 pin 2) |
+| S.BUS output | 100000 | 8E2 | yes (`tx-invert`) | USART2 TX | PB3 (Arduino **D13**, CN3 pin 15) |
+
+Arduino D0/D1 on this board are USART1 (PA10/PA9), not the VCP. D7 is
+PF0 (OSC_IN) and D3 is PB0; neither can be a USART. Default solder bridge
+SB2 routes PB7 to A4, so `usart1_rx_pb7` is not Arduino D4/D7.
 
 Bit times:
 
@@ -71,8 +75,9 @@ is enough for that pattern and leaves headroom.
 S.BUS idle is UART idle inverted: line low when not transmitting. STM32
 USART `tx-invert` provides that. No external inverter.
 
-USART1 TX (PB6 / D6) is unused. USART2 RX is not muxed. Default board
-I2C2 on PA8/PA9 is left as-is (no pin conflict with PB3/PB7).
+USART1 TX (PA9 / D1) is unused. USART2 RX is not muxed. Default board
+I2C2 on PA8/PA9 is left as-is (PA9 is unused USART1 TX; no conflict with
+PA10/PB3).
 
 ---
 
@@ -250,9 +255,9 @@ Board overlay `samples/uart_sbus/boards/nucleo_g431kb.overlay`:
 
 - Chosen / aliases: `uart-in = &usart1`, `sbus-out = &usart2`. Console
   `zephyr,console` / `zephyr,shell-uart` remain `&lpuart1`.
-- `&usart1`: `pinctrl` RX `usart1_rx_pb7` (TX pin optional/unused),
-  `current-speed = <115200>`, `status = "okay"`, `fifo-enable`.
-- `&usart2`: `pinctrl` TX `usart2_tx_pb3` only, `current-speed = <100000>`,
+- `&usart1`: `pinctrl` RX `usart1_rx_pa10` (D0), `current-speed = <115200>`,
+  `status = "okay"`, `fifo-enable`. Optional `bias-pull-up` on that pinctrl node.
+- `&usart2`: `pinctrl` TX `usart2_tx_pb3` (D13) only, `current-speed = <100000>`,
   `parity = "even"`, `stop-bits = "2"`, `tx-invert`, `fifo-enable`,
   `status = "okay"`. Do not enable RX IRQ on USART2.
 - NVIC: `&usart1 { interrupts = <37 0>; }`, `&usart2 { interrupts = <38 1>; }`,
@@ -304,8 +309,8 @@ wrapper (drop-newest, counters, wrap of the 64-slot ring).
 only (`build_only: true`, `platform_allow: nucleo_g431kb`). No console
 harness wait.
 
-**Hardware (manual):** 115200 8N1 into D7; logic analyzer or S.BUS device
-on D3 shows inverted 100 kbit/s 8E2, first output byte starts after the
+**Hardware (manual):** 115200 8N1 into D0 (PA10); logic analyzer or S.BUS device
+on D13 (PB3) shows inverted 100 kbit/s 8E2, first output byte starts after the
 first input byte (not after 25 bytes). Console line `sbus: ... fps=...`
 every ~10 s. ST-Link VCP still serves as console.
 
