@@ -2,6 +2,7 @@
 
 - **Date:** 2026-08-28
 - **Status:** Approved design, pre-implementation
+- **Plan:** `docs/superpowers/plans/2026-08-28-uart-sbus-frame-pipeline.md`
 - **Scope:** Evolve `samples/uart_sbus` on `nucleo_g431kb`: classic 25-byte
 S.BUS framing, two-slot cut-through with stale-frame drop, green activity
 LED, decaying red error LED. `zephyr-devel` module only.
