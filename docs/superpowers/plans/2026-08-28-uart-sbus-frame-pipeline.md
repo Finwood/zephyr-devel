@@ -6,7 +6,7 @@
 
 **Architecture:** RX ISR hunts `0x0F` and collects a locked 25-byte window into `current` (cut-through) or `next` (while TX is in-flight). A complete waiting `next` is replaced as a whole on the next valid commit (`supersede`). TX ISR pops `current` and promotes with `irq_lock` pointer swap. Main thread (5 ms `k_sem` timeout) owns GPIO/LED policy and 10 s stats. No `spsc_lockfree` byte ring.
 
-**Tech Stack:** Zephyr interrupt UART API, `irq_lock` / `k_sem`, GPIO `gpio-leds` (`led0` + `sbus-err-led`), module `CONFIG_UART_SBUS_SBUS2`, ztest on `native_sim` (two twister cases), `uv run west` / twister.
+**Tech Stack:** Zephyr interrupt UART API, `irq_lock` / `k_sem`, GPIO `gpio-leds` (`led0` + `led1`), module `CONFIG_UART_SBUS_SBUS2`, ztest on `native_sim` (two twister cases), `uv run west` / twister.
 
 **Spec:** `docs/superpowers/specs/2026-08-28-uart-sbus-frame-pipeline-design.md`  
 **Supersedes plan (V1 byte-pipe):** `docs/superpowers/plans/2026-08-25-uart-sbus-converter.md`
@@ -17,7 +17,7 @@
 - **Branch:** Create or stay on a `cursor/`-prefixed branch (example `cursor/uart-sbus-frame-pipeline`; Cloud suffix OK).
 - **Board:** `nucleo_g431kb` (STM32G431KB Nucleo-32). No C031 / `sbus_c031g6` in this work.
 - **Console:** Keep ST-Link VCP on LPUART1 (PA2/PA3). Do not steal it. Do not mux PA2/A7 as GPIO.
-- **Aliases:** `uart-in = &usart1`, `sbus-out = &usart2`, `sbus-err-led` for D12. Use existing `led0` (LD2 / PB8) for green.
+- **Aliases:** `uart-in = &usart1`, `sbus-out = &usart2`, `led1` for D12. Use existing `led0` (LD2 / PB8) for green.
 - **UART PHY (unchanged):** USART1 RX PA10 (D0) 115200 8N1; USART2 TX PB3 (D13) 100000 8E2 `tx-invert` TX-only; NVIC USART1 `<37 0>`, USART2 `<38 1>`, LPUART1 `<91 2>`.
 - **Framing:** Classic 25-byte S.BUS. Header `0x0F`. Footer valid iff `(footer & SBUS_FOOTER_MASK) == 0x00`. Default mask `0xFF`. `CONFIG_UART_SBUS_SBUS2=y` uses mask `0xCB`.
 - **Path:** First-byte cut-through. Never abort in-flight `current`. No channel packing, CRSF, DMA/async UART, failsafe frames, PWM, or `spsc_lockfree`.
@@ -45,7 +45,7 @@
 | `tests/sbus_pipe/tests.yaml` | `sbus.pipe` and `sbus.pipe.sbus2` on `native_sim` |
 | `samples/uart_sbus/src/main.c` | IRQ glue, `k_sem` wake, 5 ms LED loop, 10 s stats |
 | `samples/uart_sbus/prj.conf` | Add `CONFIG_GPIO=y` |
-| `samples/uart_sbus/boards/nucleo_g431kb.overlay` | Keep UART; add D12 `sbus-err-led` |
+| `samples/uart_sbus/boards/nucleo_g431kb.overlay` | Keep UART; add D12 and alias `led1` |
 | `samples/uart_sbus/README.rst` | Framing, D12 5 V LED, LD2, SBUS2 Kconfig, stats |
 | `samples/uart_sbus/img/wiring.svg` | Mark D12 error LED |
 | `samples/uart_sbus/CMakeLists.txt` | Unchanged |
@@ -653,7 +653,7 @@ EOF
 - Modify: `samples/uart_sbus/img/wiring.svg`
 
 **Interfaces:**
-- Consumes: `sbus_pipe_*` from Task 1; `DT_ALIAS(uart_in)`, `DT_ALIAS(sbus_out)`, `DT_ALIAS(led0)`, `DT_ALIAS(sbus_err_led)`; binary `k_sem wake`
+- Consumes: `sbus_pipe_*` from Task 1; `DT_ALIAS(uart_in)`, `DT_ALIAS(sbus_out)`, `DT_ALIAS(led0)`, `DT_ALIAS(led1)`; binary `k_sem wake`
 - Produces: sample on `nucleo_g431kb`; LD2 50 ms pulse per 10 `tx_frames`; D12 open-drain error LED; console line `sbus: rx=%u tx=%u err=%u frames=%u fps=%u sup=%u sync=%u`; twister `sample.uart_sbus` build-only still passes
 
 - [ ] **Step 1: Overlay, GPIO Kconfig, and IRQ/LED `main.c`**
@@ -680,15 +680,14 @@ Keep USART nodes and NVIC in `samples/uart_sbus/boards/nucleo_g431kb.overlay`. R
 	aliases {
 		uart-in = &usart1;
 		sbus-out = &usart2;
-		sbus-err-led = &sbus_err_led;
+		led1 = &sbus_err_led;
 	};
+};
 
-	sbus_err_leds {
-		compatible = "gpio-leds";
-		sbus_err_led: sbus_err_led {
-			gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
-			label = "S.BUS error";
-		};
+&leds {
+	sbus_err_led: led_1 {
+		gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		label = "S.BUS error";
 	};
 };
 
@@ -752,7 +751,7 @@ Replace `samples/uart_sbus/src/main.c` with:
 #define UART_IN_NODE     DT_ALIAS(uart_in)
 #define SBUS_OUT_NODE    DT_ALIAS(sbus_out)
 #define LED_GREEN_NODE   DT_ALIAS(led0)
-#define LED_RED_NODE     DT_ALIAS(sbus_err_led)
+#define LED_RED_NODE     DT_ALIAS(led1)
 
 #define MAIN_TICK_MS       5
 #define GREEN_PULSE_MS     50
@@ -763,7 +762,7 @@ Replace `samples/uart_sbus/src/main.c` with:
 BUILD_ASSERT(DT_NODE_EXISTS(UART_IN_NODE), "alias uart-in missing");
 BUILD_ASSERT(DT_NODE_EXISTS(SBUS_OUT_NODE), "alias sbus-out missing");
 BUILD_ASSERT(DT_NODE_EXISTS(LED_GREEN_NODE), "alias led0 missing");
-BUILD_ASSERT(DT_NODE_EXISTS(LED_RED_NODE), "alias sbus-err-led missing");
+BUILD_ASSERT(DT_NODE_EXISTS(LED_RED_NODE), "alias led1 missing");
 
 static const struct device *const uart_in = DEVICE_DT_GET(UART_IN_NODE);
 static const struct device *const sbus_out = DEVICE_DT_GET(SBUS_OUT_NODE);

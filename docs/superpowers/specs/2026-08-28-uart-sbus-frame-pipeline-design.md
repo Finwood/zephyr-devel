@@ -79,7 +79,7 @@ header/footer checks, and adds LEDs driven only from the main thread.
 | Input          | 115200 8N1 USART1 RX            | PA10 Arduino **D0** (CN4 pin 2)  |
 | S.BUS out      | 100000 8E2 inverted USART2 TX   | PB3 Arduino **D13** (CN3 pin 15) |
 | Green activity | GPIO push-pull, active-high     | **LD2 / PB8** (`led0`)           |
-| Red error      | GPIO **open-drain, active-low** | **D12 / PB4** (CN4 pin 15)       |
+| Red error      | GPIO **open-drain, active-low** | **D12 / PB4** (CN4 pin 15, `led1`) |
 
 
 Red LED wiring: **+5 V** (CN3 pin 4) → series resistor (~330 Ω) → LED
@@ -307,7 +307,7 @@ Drive `GPIO_ACTIVE_HIGH`. At 0, turn off.
 **2000 ms**). Fault must not be shortened by a later supersede. Active-low
 open-drain: on = drive 0, off = Hi-Z. At 0, off.
 
-GPIO only from this loop. `led0` for green; overlay `sbus-err-led` for red.
+GPIO only from this loop. `led0` for green; overlay `led1` for red.
 
 **Stats** every ~10 s from the same loop (`k_uptime` / tick count), not a
 second sleeper. Lifetime counters, wrap-safe deltas:
@@ -337,9 +337,9 @@ Overlay `samples/uart_sbus/boards/nucleo_g431kb.overlay` (in addition to
 V1 USART nodes):
 
 - Keep `uart-in = &usart1`, `sbus-out = &usart2`.
-- Under `/ { leds { ... } }` or a sibling `sbus-err-led` gpio-leds node:
+- Extend `&leds` (or a sibling gpio-leds node) with D12:
   `gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>`.
-- Alias `sbus-err-led` (and use existing `led0` for LD2).
+- Alias `led1` for that node (existing `led0` remains LD2).
 
 `prj.conf`: `CONFIG_GPIO=y` if not implied. Binary `k_sem` needs no extra
 event Kconfig. `CONFIG_UART_INTERRUPT_DRIVEN=y` unchanged.
