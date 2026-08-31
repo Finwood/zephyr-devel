@@ -5,14 +5,26 @@
  *   ST-Link VCP is LPUART1 PA2/PA3 (not D0/D1).
  *   UART in:  USART1 RX PA10 = D0 (CN4 pin 2).
  *   S.BUS:    USART2 TX PB3  = D13 (CN3 pin 15).
+ *   Error LED: GPIOB 4 = D12 (CN4 pin 15), open-drain active-low to 5 V.
  * D7 is PF0 (OSC_IN) and D3 is PB0; neither is a USART pin.
  * Default SB2 routes PB7 to A4, not to D4, so USART1_RX_PB7 is a trap.
+ * Do not use A7 (PA2): LPUART1 TX / ST-Link VCP, not 5 V-tolerant.
  */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	aliases {
 		uart-in = &usart1;
 		sbus-out = &usart2;
+		led1 = &sbus_err_led;
+	};
+};
+
+&leds {
+	sbus_err_led: led_1 {
+		gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		label = "S.BUS error";
 	};
 };
 
@@ -37,7 +49,7 @@
 	stop-bits = "2";
 	tx-invert;
 	fifo-enable;
-	interrupts = <38 1>;
+	interrupts = <38 0>;
 	status = "okay";
 };
 

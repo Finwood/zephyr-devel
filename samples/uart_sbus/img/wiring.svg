@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 760" role="img">
-<title>Nucleo-32 G431KB pinout for UART to S.BUS wiring</title>
-<desc>USB at top. UART in on D0 (CN4 pin 2, USART1 RX PA10). S.BUS out on D13 (CN3 pin 15, USART2 TX PB3). Console is ST-Link USB, not Arduino D0/D1.</desc>
+<title>Nucleo-32 G431KB pinout for UART to S.BUS wiring with D12 error LED</title>
+<desc>USB at top. UART in on D0 (CN4 pin 2, USART1 RX PA10). S.BUS out on D13 (CN3 pin 15, USART2 TX PB3). Red error LED on D12 (CN4 pin 15, GPIO PB4 open-drain to 5 V). Console is ST-Link USB, not Arduino D0/D1.</desc>
 <rect width="780" height="760" fill="#f7fafc"/>
 <rect x="260" y="70" width="260" height="620" rx="10" fill="#03234b" stroke="#021526" stroke-width="2"/>
 <rect x="355" y="56" width="70" height="28" rx="3" fill="#cbd5e0" stroke="#4a5568"/>
@@ -39,8 +39,10 @@
 <text x="276" y="570" font-family="sans-serif" font-size="11" fill="#e2e8f0">D10</text>
 <circle cx="258" cy="600" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
 <text x="276" y="604" font-family="sans-serif" font-size="11" fill="#e2e8f0">D11</text>
-<circle cx="258" cy="634" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
+<circle cx="258" cy="634" r="5.5" fill="#fc8181" stroke="#f7fafc" stroke-width="1.5"/>
 <text x="276" y="638" font-family="sans-serif" font-size="11" fill="#e2e8f0">D12</text>
+<text x="244" y="634" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="700" fill="#c53030">Error LED</text>
+<text x="244" y="654" text-anchor="end" font-family="sans-serif" font-size="11" fill="#c53030">D12/PB4 OD to 5V</text>
 <circle cx="522" cy="158" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
 <text x="504" y="162" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">VIN</text>
 <circle cx="522" cy="192" r="5.5" fill="#4a5568" stroke="#f7fafc" stroke-width="1.5"/>
@@ -49,6 +51,7 @@
 <text x="504" y="230" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">NRST</text>
 <circle cx="522" cy="260" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
 <text x="504" y="264" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">+5V</text>
+<text x="536" y="264" text-anchor="start" font-family="sans-serif" font-size="11" fill="#c53030">red LED anode via 330Ω</text>
 <circle cx="522" cy="294" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
 <text x="504" y="298" text-anchor="end" font-family="sans-serif" font-size="11" fill="#e2e8f0">A7</text>
 <circle cx="522" cy="328" r="5.5" fill="#edf2f7" stroke="#f7fafc" stroke-width="1.5"/>
