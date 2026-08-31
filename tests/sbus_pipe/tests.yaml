@@ -1,8 +1,12 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - sbus
 tests:
-  sbus.pipe:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
-    tags:
-      - sbus
+  sbus.pipe: {}
+  sbus.pipe.sbus2:
+    extra_configs:
+      - CONFIG_UART_SBUS_SBUS2=y

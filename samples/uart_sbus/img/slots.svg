@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 430" role="img">
+<title>Three slot objects and four role pointers</title>
+<desc>USART1 RX writes through collect into one of three slot objects. USART2 TX only pops current. next is the successor. scratch is chosen as collect at hunt when next is already complete. collect is NULL while hunting.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#2d3748"/>
+</marker>
+</defs>
+<rect width="840" height="430" fill="#f7fafc"/>
+<text x="420" y="28" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1a202c">Three slot objects, four pointers</text>
+<text x="420" y="48" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4a5568">Roles move by pointer swap. Bytes stay in the object they were written to.</text>
+<rect x="24" y="72" width="120" height="56" rx="8" fill="#2b6cb0" stroke="#2c5282" stroke-width="2"/>
+<text x="84" y="96" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700" fill="#ffffff">USART1 RX</text>
+<text x="84" y="114" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#bee3f8">push()</text>
+<rect x="188" y="64" width="464" height="72" rx="10" fill="#edf2f7" stroke="#cbd5e0"/>
+<text x="420" y="94" text-anchor="middle" font-family="monospace" font-size="13" fill="#2d3748">collect &#8594; current | next | scratch | NULL</text>
+<text x="420" y="116" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#718096">NULL = hunting for 0x0F. Non-NULL = locked 25-byte window.</text>
+<line x1="144" y1="100" x2="188" y2="100" stroke="#2b6cb0" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="280" y1="136" x2="160" y2="176" stroke="#a0aec0" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="420" y1="136" x2="420" y2="176" stroke="#a0aec0" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="560" y1="136" x2="680" y2="176" stroke="#a0aec0" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="40" y="176" width="240" height="132" rx="10" fill="#c6f6d5" stroke="#276749" stroke-width="2"/>
+<text x="160" y="202" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#22543d">current</text>
+<text x="160" y="224" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#276749">TX drains this</text>
+<text x="160" y="250" text-anchor="middle" font-family="monospace" font-size="11" fill="#1a202c">buf[25]  len  rd</text>
+<text x="160" y="270" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">cut-through or in-flight</text>
+<text x="160" y="290" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">never aborted once TX starts</text>
+<rect x="300" y="176" width="240" height="132" rx="10" fill="#bee3f8" stroke="#2b6cb0" stroke-width="2"/>
+<text x="420" y="202" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#2a4365">next</text>
+<text x="420" y="224" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#2b6cb0">successor</text>
+<text x="420" y="250" text-anchor="middle" font-family="monospace" font-size="11" fill="#1a202c">empty | partial | complete</text>
+<text x="420" y="270" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">promoted to current</text>
+<text x="420" y="290" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">when current is drained</text>
+<rect x="560" y="176" width="240" height="132" rx="10" fill="#fefcbf" stroke="#b7791f" stroke-width="2"/>
+<text x="680" y="202" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#744210">scratch</text>
+<text x="680" y="224" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#975a16">staging only, never TX source</text>
+<text x="680" y="250" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a202c">chosen at hunt if next is complete</text>
+<text x="680" y="270" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">good footer: swap with next</text>
+<text x="680" y="290" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">bad footer: reset, keep next</text>
+<rect x="40" y="348" width="240" height="56" rx="8" fill="#276749" stroke="#22543d" stroke-width="2"/>
+<text x="160" y="372" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700" fill="#ffffff">USART2 TX</text>
+<text x="160" y="390" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#c6f6d5">pop() from current only</text>
+<line x1="160" y1="308" x2="160" y2="348" stroke="#276749" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

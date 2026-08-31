@@ -156,11 +156,9 @@ NULL`.
 `uart_err_check()` reports overrun, noise, framing, or parity.
 
 Counters are `atomic_t` and wrap naturally. Snapshot them with
-`atomic_get` from the main thread. Because USART1 preempts USART2, TX
-cannot run during the RX ISR; producing each byte in `push` vs
-`spsc_produce_all` at the end of the RX ISR does not change cut-through
-latency. `push` still produces immediately so the public API is one byte
-at a time.
+`atomic_get` from the main thread. USART1 and USART2 share NVIC priority,
+so they cannot nest; `push` still produces immediately so the public API
+is one byte at a time.
 
 ---
 
@@ -173,9 +171,9 @@ Do not use `uart_poll_*` or UART async/DMA on USART1/USART2.
 
 1. If `uart_irq_rx_ready()`, loop `uart_fifo_read(..., 1)` and
    `sbus_pipe_push` each byte.
-2. After any successful push, call `uart_irq_tx_enable(sbus_out)`.
-   Enabling an already-enabled TX IRQ is required (avoids the
-   empty→disable vs push→enable race).
+2. After any successful push, call `uart_irq_tx_enable(sbus_out)` so an
+   idle TX ISR starts. Equal-priority RX/TX ISRs cannot nest, so TX cannot
+   `uart_irq_tx_disable` over a concurrent enable.
 3. If `uart_err_check()` is non-zero, `atomic_inc(&pipe.rx_err)` and
    clear via the driver API as required.
 
@@ -184,6 +182,8 @@ Do not use `uart_poll_*` or UART async/DMA on USART1/USART2.
 1. While `uart_irq_tx_ready()`, `sbus_pipe_pop`; on success
    `uart_fifo_fill` that byte and the pop already counted `tx_bytes`.
 2. On empty queue, `uart_irq_tx_disable(sbus_out)` and return.
+   Do not re-`pop` after disable: RX cannot nest at equal NVIC priority.
+   A pending RX tail-chains afterward and calls `uart_irq_tx_enable`.
    Hardware then finishes the last stop bits and sits at inverted idle.
 
 Cut-through: the first byte of a burst enables TX before the rest of the
@@ -209,11 +209,13 @@ priorities become:
 | UART | IRQ | Priority |
 |---|---|---|
 | USART1 (input) | 37 | 0 |
-| USART2 (S.BUS TX) | 38 | 1 |
+| USART2 (S.BUS TX) | 38 | 0 |
 | LPUART1 (console) | 91 | 2 |
 
-USART1 must preempt USART2 so the queue keeps filling during TX. Console
-must not preempt either converter USART.
+USART1 and USART2 share priority so they cannot nest (Cortex-M
+equal-priority run-to-completion). Console must not preempt either
+converter USART. USART RX FIFO (`fifo-enable`) holds incoming bytes
+while a same-priority TX ISR runs.
 
 `CONFIG_UART_INTERRUPT_DRIVEN=y`. UART async Kconfig stays off unless a
 dependency forces it; the sample must not call async APIs.
@@ -260,7 +262,7 @@ Board overlay `samples/uart_sbus/boards/nucleo_g431kb.overlay`:
 - `&usart2`: `pinctrl` TX `usart2_tx_pb3` (D13) only, `current-speed = <100000>`,
   `parity = "even"`, `stop-bits = "2"`, `tx-invert`, `fifo-enable`,
   `status = "okay"`. Do not enable RX IRQ on USART2.
-- NVIC: `&usart1 { interrupts = <37 0>; }`, `&usart2 { interrupts = <38 1>; }`,
+- NVIC: `&usart1 { interrupts = <37 0>; }`, `&usart2 { interrupts = <38 0>; }`,
   `&lpuart1 { interrupts = <91 2>; }` (IRQ numbers from the G4 SoC DT;
   priorities as in §6).
 

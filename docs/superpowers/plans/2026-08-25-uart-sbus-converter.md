@@ -24,7 +24,7 @@
 - **Queue:** Wrap Zephyr `<zephyr/sys/spsc_lockfree.h>`. Do not implement a custom ring (`head`/`tail` mask). RX ISR is the only producer; TX ISR is the only consumer. `spsc_reset` only from init / ztest `before()`.
 - **Stats:** Every `K_SECONDS(10)` print `sbus: rx=%u tx=%u drops=%u err=%u fps=%u` with wrap-safe `fps = tx_delta / 25 / 10`.
 - **ISRs:** Only `uart_irq_*` / `uart_fifo_*` / `sbus_pipe_push`/`pop` / `uart_err_check` / `atomic_inc` on `rx_err`. No `printk` from ISRs.
-- **NVIC:** USART1 `<37 0>`, USART2 `<38 1>`, LPUART1 `<91 2>`.
+- **NVIC:** USART1 `<37 0>`, USART2 `<38 0>`, LPUART1 `<91 2>`.
 - **Build:** `ZEPHYR_BASE=<repo>/deps/zephyr`, prefix west with `uv run`.
 - **Commits:** Conventional Commits. Do not use `git commit -s` / `--signoff`. Do not commit secrets.
 
@@ -402,7 +402,7 @@ Create `samples/uart_sbus/boards/nucleo_g431kb.overlay`:
 	stop-bits = "2";
 	tx-invert;
 	fifo-enable;
-	interrupts = <38 1>;
+	interrupts = <38 0>;
 	status = "okay";
 };
 
