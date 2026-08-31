@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "UART to S.BUS converter"
+
+source "Kconfig.zephyr"
+
+config UART_SBUS_SBUS2
+	bool "Accept S.BUS2 slot footers"
+	default n
+	help
+	  Valid footer iff (byte & mask) == 0x00.
+	  n: mask 0xFF (classic S.BUS, footer 0x00 only).
+	  y: mask 0xCB (ignore bits 2,4,5: 0x00/0x04/0x14/0x24/0x34).
