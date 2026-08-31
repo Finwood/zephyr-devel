@@ -18,7 +18,7 @@
 - **Board:** `nucleo_g431kb` (STM32G431KB Nucleo-32). No C031 / `sbus_c031g6` in this work.
 - **Console:** Keep ST-Link VCP on LPUART1 (PA2/PA3). Do not steal it. Do not mux PA2/A7 as GPIO.
 - **Aliases:** `uart-in = &usart1`, `sbus-out = &usart2`, `led1` for D12. Use existing `led0` (LD2 / PB8) for green.
-- **UART PHY (unchanged):** USART1 RX PA10 (D0) 115200 8N1; USART2 TX PB3 (D13) 100000 8E2 `tx-invert` TX-only; NVIC USART1 `<37 0>`, USART2 `<38 1>`, LPUART1 `<91 2>`.
+- **UART PHY (unchanged):** USART1 RX PA10 (D0) 115200 8N1; USART2 TX PB3 (D13) 100000 8E2 `tx-invert` TX-only; NVIC USART1 `<37 0>`, USART2 `<38 0>`, LPUART1 `<91 2>`.
 - **Framing:** Classic 25-byte S.BUS. Header `0x0F`. Footer valid iff `(footer & SBUS_FOOTER_MASK) == 0x00`. Default mask `0xFF`. `CONFIG_UART_SBUS_SBUS2=y` uses mask `0xCB`.
 - **Path:** First-byte cut-through. Never abort in-flight `current`. No channel packing, CRSF, DMA/async UART, failsafe frames, PWM, or `spsc_lockfree`.
 - **Overflow:** Two slots only. Drop a complete waiting `next` as a whole (`supersede++`) when a newly committed frame replaces it. Do not drop interior bytes of `current`.
@@ -712,7 +712,7 @@ Keep USART nodes and NVIC in `samples/uart_sbus/boards/nucleo_g431kb.overlay`. R
 	stop-bits = "2";
 	tx-invert;
 	fifo-enable;
-	interrupts = <38 1>;
+	interrupts = <38 0>;
 	status = "okay";
 };
 

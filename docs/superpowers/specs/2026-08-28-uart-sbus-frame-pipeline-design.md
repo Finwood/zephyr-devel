@@ -8,7 +8,9 @@ S.BUS framing, two-slot cut-through with stale-frame drop, green activity
 LED, decaying red error LED. `zephyr-devel` module only.
 - **Supersedes (path only):** V1 byte-pipe behavior in
 `docs/superpowers/specs/2026-08-25-uart-sbus-converter-design.md`.
-Physical layer, pins D0/D13, NVIC, and “no driver changes” still apply.
+Physical layer, pins D0/D13, `tx-invert`, `fifo-enable`, and “no driver
+changes” still apply. NVIC: USART1 and USART2 share priority 0 (they do
+not nest); LPUART1 stays 2.
 - **Upstream target:** none. No in-tree Zephyr UART or `nucleo_g431kb`
 board-file changes.
 
@@ -92,7 +94,8 @@ damage the pin and steals the console.
 **D12 / PB4** is **FT_c** (5 V-tolerant) and `TIM3_CH1` if PWM is added
 later. D7/D8 are PF0/PF1 (OSC). D2 is PA12 with a factory D2–GND jumper.
 
-NVIC, `tx-invert`, `fifo-enable`, and USART aliases stay as in V1.
+`tx-invert`, `fifo-enable`, and USART aliases stay as in V1. NVIC: USART1
+and USART2 both use priority 0; LPUART1 stays 2.
 
 ---
 
@@ -122,7 +125,11 @@ Three units:
 3. **Main loop** — `k_sem_take(..., K_MSEC(5))`, snapshot atomics, LED
   policy, 10 s stats. Not on the S.BUS byte path.
 
-USART1 still preempts USART2 (priorities 0 then 1). Console stays 2.
+USART1 and USART2 share NVIC priority 0, so they cannot nest (Cortex-M
+equal-priority run-to-completion / tail-chain). Console stays 2.
+`main.c` `BUILD_ASSERT`s that `DT_IRQ(uart-in)` and `DT_IRQ(sbus-out)`
+priorities are equal. USART RX FIFO (`fifo-enable`, 8 bytes, plus 1-byte
+`RDR`) covers RX while a same-priority TX ISR runs.
 
 ---
 
@@ -131,7 +138,8 @@ USART1 still preempts USART2 (priorities 0 then 1). Console stays 2.
 ## 4. Two-slot assembler
 
 Capacity is **two frames**, not 64 bytes. Ping-pong pointers avoid a
-memcpy promote (RX can preempt TX; a 25-byte copy is not atomic).
+memcpy promote. Equal-priority RX/TX ISRs do not nest; `irq_lock` still
+serializes the pointer swap.
 
 ```c
 #define SBUS_FRAME_LEN 25
@@ -238,8 +246,9 @@ If after promote `current->len > 0`, keep TX IRQ enabled (cut-through of a
 partial successor or send a waiting complete frame). If `current` is empty,
 disable TX IRQ.
 
-`irq_lock` in the TX ISR blocks RX for a few stores so RX never sees both
-pointers aliasing the same slot.
+`irq_lock` in the TX ISR serializes the pointer swap. Equal-priority RX
+cannot nest here anyway; the lock stays so a later priority split cannot
+tear `current`/`next`.
 
 Do not promote while `rd == len` but RX is still in COLLECT on `current`
 (cut-through gap between bytes). TX IRQ disables until the next push
@@ -271,7 +280,10 @@ and `k_sem_give(&wake)`; `uart_fifo_read` one byte, `sbus_pipe_push`; on
 successful store that implies TX should run, `uart_irq_tx_enable`.
 
 TX ISR: `uart_irq_update`; while `uart_irq_tx_ready`, `sbus_pipe_pop` and
-`uart_fifo_fill`; empty → disable TX.
+`uart_fifo_fill`; empty → `uart_irq_tx_disable` and return. Do **not**
+re-`pop` / re-enable after disable: RX cannot preempt TX at equal NVIC
+priority, so the empty→disable vs push→enable race does not exist. A
+pending RX tail-chains after TX returns and calls `uart_irq_tx_enable`.
 
 After `tx_frames`, `supersede`, `sync_err`, or `rx_err` increments, ISR
 calls `k_sem_give(&wake)` (binary sem, count max 1). No GPIO.
@@ -337,6 +349,9 @@ Overlay `samples/uart_sbus/boards/nucleo_g431kb.overlay` (in addition to
 V1 USART nodes):
 
 - Keep `uart-in = &usart1`, `sbus-out = &usart2`.
+- NVIC: `&usart1 { interrupts = <37 0>; }`, `&usart2 { interrupts = <38 0>; }`,
+  `&lpuart1 { interrupts = <91 2>; }`. Converter USARTs must share priority;
+  `main.c` `BUILD_ASSERT`s that.
 - Extend `&leds` (or a sibling gpio-leds node) with D12:
   `gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>`.
 - Alias `led1` for that node (existing `led0` remains LD2).
