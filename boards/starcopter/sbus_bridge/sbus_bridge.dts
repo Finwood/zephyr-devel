@@ -1,15 +1,15 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 /dts-v1/;
 #include <st/c0/stm32c031X6.dtsi>
-#include <st/c0/stm32c031g(4-6)ux-pinctrl.dtsi>
+#include <st/c0/stm32c031f(4-6)px-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Finwood UART-S.BUS STM32C031G6U6";
-	compatible = "finwood,sbus-c031g6";
+	model = "starcopter UART S.BUS Bridge";
+	compatible = "starcopter,sbus-bridge";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -20,12 +20,12 @@
 		compatible = "gpio-leds";
 
 		led_green: led_0 {
-			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
 			label = "S.BUS activity";
 		};
 
 		led_red: led_1 {
-			gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
 			label = "S.BUS error";
 		};
 	};
@@ -38,7 +38,6 @@
 	};
 };
 
-/* Cheap board: no HSE/LSE crystals. SoC HSI is 48 MHz, hsi-div = 1. */
 &clk_hsi {
 	status = "okay";
 };
@@ -51,11 +50,11 @@
 };
 
 /*
- * USART1 IRQ 27 and USART2 IRQ 28 share NVIC priority 0: the sample asserts
- * equal priorities so RX cannot starve TX mid-byte (and vice versa).
+ * USART1 IRQ 27 and USART2 IRQ 28 share NVIC priority 0, so RX cannot starve
+ * TX mid-byte (and vice versa). Equal priorities are asserted by the application.
  */
 &usart1 {
-	pinctrl-0 = <&usart1_rx_pb7>;
+	pinctrl-0 = <&usart1_tx_pa0 &usart1_rx_pa1>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	fifo-enable;
@@ -63,7 +62,11 @@
 	status = "okay";
 };
 
-/* USART2 TX-only inverted S.BUS on PA4 (not PA14/SWCLK). */
+&usart1_rx_pa1 {
+	bias-pull-up;
+};
+
+/* USART2 TX-only inverted S.BUS on PA4. */
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa4>;
 	pinctrl-names = "default";
