@@ -6,6 +6,7 @@ project(sbus_bridge_hil)
 
 target_sources(app PRIVATE
   src/main.c
+  src/capture.c
   src/frame.c
   src/wire.c
 )
