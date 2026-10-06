@@ -1,6 +1,49 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Wiring (with DUT sbus_bridge):
+ *   PB6 (D5)  USART1 TX 115200 8N1  -> DUT PA1
+ *   PB4 (D12) USART2 RX 100k 8E2 rx-invert <- DUT PA4
+ *   PA0 (A0)  TIM2_CH1 jumpered to PB6 (UART start, falling)
+ *   PA1 (A1)  TIM2_CH2 jumpered to PB4 (S.BUS start, rising)
+ * Console LPUART1 PA2/PA3 untouched.
  */
 
 / {
+	aliases {
+		uart-out = &usart1;
+		sbus-in = &usart2;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	fifo-enable;
+	interrupts = <37 1>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_rx_pb4>;
+	pinctrl-names = "default";
+	current-speed = <100000>;
+	parity = "even";
+	stop-bits = "2";
+	rx-invert;
+	fifo-enable;
+	interrupts = <38 1>;
+	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <16>;
+	status = "okay";
+
+	counter2: counter {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0 &tim2_ch2_pa1>;
+		pinctrl-names = "default";
+	};
 };

@@ -4,6 +4,13 @@
 
 #include <zephyr/ztest.h>
 #include "frame.h"
+#include "wire.h"
+
+static void *eol_setup(void)
+{
+	zassert_ok(hil_wire_init());
+	return NULL;
+}
 
 ZTEST(eol, test_frame_crc_vector)
 {
@@ -25,4 +32,4 @@ ZTEST(eol, test_frame_crc_vector)
 	zassert_false(hil_frame_check(frame, &seq, &t_us));
 }
 
-ZTEST_SUITE(eol, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(eol, NULL, eol_setup, NULL, NULL, NULL);
