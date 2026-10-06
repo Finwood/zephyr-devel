@@ -1,4 +1,7 @@
 name: zephyr-devel
+build:
+  settings:
+    board_root: .
 samples:
   - samples
 tests:

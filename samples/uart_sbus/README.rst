@@ -10,7 +10,21 @@ as a whole when a newer valid frame is committed.
 
 Pipeline internals (slots, cut-through, supersede): `PIPELINE.md <PIPELINE.md>`_.
 
-Supported board: ``nucleo_g431kb``.
+Supported boards: ``nucleo_g431kb`` and ``sbus_bridge``.
+
+``sbus_bridge`` is the intended custom hardware (STM32C031F6P6 UART→S.BUS
+PCB). Console on that board is **SEGGER RTT over SWD**, not a UART.
+
+Robustness
+**********
+
+Field builds enable a small recovery package:
+
+- Independent IWDG with a 100 ms window, fed from the main loop (≤5 ms tick).
+- Stack sentinel plus reboot-on-fatal so overflow/faults reset instead of hang.
+- Terse fault dump (``CONFIG_FAULT_DUMP=1``) and 1 KiB main/ISR stacks.
+
+See ``docs/superpowers/specs/2026-10-06-uart-sbus-field-robustness-design.md``.
 
 Wiring (Nucleo-32 Arduino Nano header)
 **************************************
@@ -37,10 +51,24 @@ Wiring (Nucleo-32 Arduino Nano header)
 - Do not use A7 for the LED. A7 is PA2 (LPUART1 TX / ST-Link VCP) and is not
   5 V-tolerant.
 
+Wiring (``sbus_bridge``, STM32C031F6P6 TSSOP-20)
+************************************************
+
+- Console: SEGGER RTT via SWD (no spare USART for ST-Link VCP)
+- UART: USART1 TX **PA0**, RX **PA1** (internal pull-up), 115200 8N1
+- S.BUS: USART2 TX inverted **PA4**, 100000 8E2, hardware ``tx-invert``,
+  idle low. No external inverter.
+- Green activity: **PA6**, push-pull active-high (``led0``)
+- Red error: **PA7**, push-pull active-high (``led1``)
+- Debug: SWDIO **PA13**, SWCLK **PA14**, NRST **PF2**
+
+See ``boards/starcopter/sbus_bridge/README.md`` for the pin map and flash
+runners.
+
 Building and flashing
 *********************
 
-.. code-block:: console
+Nucleo-G431KB::
 
    export ZEPHYR_BASE=$PWD/deps/zephyr
    uv run west build -b nucleo_g431kb -d /tmp/b_uart_sbus samples/uart_sbus
@@ -52,6 +80,14 @@ Optional Futaba S.BUS2 slot footers (``0x04`` / ``0x14`` / ``0x24`` / ``0x34``):
 
 Default is classic S.BUS only (footer ``0x00``). Inter-window telemetry bytes
 are always dropped while hunting; they do not increment ``sync``.
+
+``sbus_bridge``::
+
+   export ZEPHYR_BASE=$PWD/deps/zephyr
+   export ZEPHYR_SDK_INSTALL_DIR=/opt/
+   export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+   uv run west build -b sbus_bridge -d /tmp/b_sbus_bridge samples/uart_sbus
+   uv run west flash -d /tmp/b_sbus_bridge
 
 Stats
 *****

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(sbus_bridge_hil)
+
+target_sources(app PRIVATE
+  src/main.c
+  src/capture.c
+  src/frame.c
+  src/wire.c
+  src/status_led.c
+)

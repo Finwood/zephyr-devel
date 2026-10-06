@@ -21,6 +21,28 @@
 	};
 };
 
+/*
+ * Match sbus_bridge (STM32C031) at 48 MHz SYSCLK.
+ * G4 HSI is 16 MHz, so PLL is required: 16/4*24/2 = 48.
+ */
+&pll {
+	div-m = <4>;
+	mul-n = <24>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
 &leds {
 	sbus_err_led: led_1 {
 		gpios = <&gpiob 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
@@ -55,4 +77,8 @@
 
 &lpuart1 {
 	interrupts = <91 2>;
+};
+
+&iwdg {
+	status = "okay";
 };
