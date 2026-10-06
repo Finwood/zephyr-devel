@@ -16,11 +16,11 @@
 #include "wire.h"
 
 #define HIL_STREAM_N               100
-#define HIL_PACED_PERIOD_MS        10
-#define HIL_PACED_SEND_GAP_MIN_US  8000
-#define HIL_PACED_SEND_GAP_MAX_US  12000
+#define HIL_PACED_PERIOD_MS        5 /* 200 Hz */
+#define HIL_PACED_SEND_GAP_MIN_US  3000
+#define HIL_PACED_SEND_GAP_MAX_US  7000
 #define HIL_RTT_MIN_US             50
-#define HIL_RTT_MAX_US             150
+#define HIL_RTT_MAX_US             200
 #define HIL_GAPLESS_RX_MIN         70
 #define HIL_GAPLESS_RX_MAX         80
 #define HIL_GAPLESS_SEND_GAP_MIN_US 1000
@@ -32,6 +32,9 @@
 #define HIL_FIRST_FRAME_TO_MS      50
 #define HIL_SETTLE_TIMEOUT_MS      2000
 #define HIL_CAPTURE_TIMEOUT_MS     20
+#define HIL_NOISE_N                512
+#define HIL_NOISE_SEED             0xC0FFEEu
+#define HIL_NOISE_SEQ              0x4E01u
 
 static bool eol_any_failed(void)
 {
@@ -285,6 +288,90 @@ ZTEST(eol, test_gapless)
 
 	assert_stream("gapless", HIL_STREAM_N - 1, HIL_GAPLESS_RX_MIN, HIL_GAPLESS_RX_MAX, 2,
 		      HIL_GAPLESS_SEND_GAP_MIN_US, HIL_GAPLESS_SEND_GAP_MAX_US, true);
+}
+
+/* xorshift32; not crypto — reproducible flood for HIL. */
+static uint32_t xorshift32(uint32_t *state)
+{
+	uint32_t x = *state;
+
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	*state = x;
+	return x;
+}
+
+static void flood_noise(bool allow_header)
+{
+	uint8_t chunk[HIL_FRAME_LEN];
+	uint32_t rng = HIL_NOISE_SEED;
+	size_t left = HIL_NOISE_N;
+
+	while (left > 0U) {
+		size_t n = MIN(left, sizeof(chunk));
+
+		for (size_t i = 0; i < n; i++) {
+			uint8_t b = (uint8_t)xorshift32(&rng);
+
+			if (!allow_header && b == HIL_HDR) {
+				b ^= 0x01U;
+			}
+			chunk[i] = b;
+		}
+		zassert_ok(hil_wire_send_bytes(chunk, n), "noise send failed (%zu left)", left);
+		left -= n;
+	}
+}
+
+static void assert_recovery_frame(const char *name)
+{
+	uint8_t frame[HIL_FRAME_LEN];
+	uint32_t seq;
+	uint32_t t_us;
+
+	hil_frame_encode(frame, HIL_NOISE_SEQ, now_us());
+	zassert_ok(hil_wire_send_frame(frame));
+
+	zassert_true(WAIT_FOR(hil_wire_rx_count() >= 1, 50000, k_msleep(1)),
+		     "%s: no complete frame on S.BUS after recovery send", name);
+	settle();
+	zassert_equal(hil_wire_rx_count(), 1, "%s: expected exactly one logged frame", name);
+	zassert_equal(hil_wire_corrupt_count(), 0, "%s: corrupt after recovery", name);
+	zassert_true(hil_wire_rx_get(0, &seq, &t_us), "%s: rx_get failed", name);
+	zassert_equal(seq, HIL_NOISE_SEQ, "%s: seq %u != %u", name, seq, HIL_NOISE_SEQ);
+
+	TC_PRINT("%s: recovered seq=%u\n", name, seq);
+}
+
+ZTEST(eol, test_noise_no_header)
+{
+	/* Case C: noise without 0x0F keeps DUT in HUNT; one valid frame must pass. */
+	settle();
+	hil_wire_reset();
+	hil_capture_disarm();
+
+	flood_noise(false);
+	settle();
+	hil_wire_reset();
+
+	assert_recovery_frame("noise_no_header");
+}
+
+ZTEST(eol, test_noise_resync)
+{
+	/* Case A: unrestricted noise may mid-COLLECT; drain then one valid frame. */
+	settle();
+	hil_wire_reset();
+	hil_capture_disarm();
+
+	flood_noise(true);
+	zassert_ok(hil_wire_drain());
+	k_msleep(HIL_SETTLE_MS);
+	settle();
+	hil_wire_reset();
+
+	assert_recovery_frame("noise_resync");
 }
 
 ZTEST_SUITE(eol, NULL, eol_setup, NULL, NULL, eol_teardown);

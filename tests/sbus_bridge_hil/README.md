@@ -2,8 +2,8 @@
 
 ZTest fixture that black-box tests a production `samples/uart_sbus` image on
 `starcopter/sbus_bridge`. One firmware image runs an EOL suite at boot
-(cut-through, 100 Hz paced stream, gapless overload). Re-run by rebooting the
-tester (shell or NRST).
+(cut-through, paced stream, gapless overload, noise recovery). Re-run by
+rebooting the tester (shell or NRST).
 
 Common ground between DUT and tester. Both run at 3.3 V.
 
@@ -34,7 +34,11 @@ Both off while a suite run is in progress; teardown latches green or red.
 Tester console is LPUART1 (PA2/PA3) via the Nucleo’s ST-Link VCP.
 
 Round-trip capture is used on the cut-through frame and on each paced frame.
-It is **not** measured during the gapless case (overlapping start bits).
+It is **not** measured during gapless or noise-recovery cases.
+
+Noise recovery: a fast pseudo-random UART flood, then one valid frame must
+appear on S.BUS — once with no `0x0F` in the flood (DUT stays hunting), and
+once with unrestricted bytes plus a 24-footer drain before the valid frame.
 
 ## Flash
 

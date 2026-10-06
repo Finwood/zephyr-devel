@@ -4,8 +4,6 @@
 
 #include "capture.h"
 
-#include <errno.h>
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/sys/atomic.h>

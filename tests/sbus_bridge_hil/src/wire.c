@@ -4,6 +4,7 @@
 
 #include "wire.h"
 
+#include <errno.h>
 #include <string.h>
 
 #include <zephyr/device.h>
@@ -180,6 +181,26 @@ void hil_wire_reset(void)
 int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN])
 {
 	return hil_wire_send(frame, HIL_FRAME_LEN);
+}
+
+int hil_wire_send_bytes(const uint8_t *data, size_t len)
+{
+	if (data == NULL && len > 0U) {
+		return -EINVAL;
+	}
+
+	while (len > 0U) {
+		size_t n = MIN(len, sizeof(tx_buf));
+		int ret = hil_wire_send(data, n);
+
+		if (ret != 0) {
+			return ret;
+		}
+		data += n;
+		len -= n;
+	}
+
+	return 0;
 }
 
 int hil_wire_drain(void)

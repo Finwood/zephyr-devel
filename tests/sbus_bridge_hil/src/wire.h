@@ -15,6 +15,9 @@ int hil_wire_init(void);
 void hil_wire_reset(void);
 int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN]);
 
+/* Chunk-send an arbitrary buffer on uart-out (≤ HIL_FRAME_LEN per IRQ burst). */
+int hil_wire_send_bytes(const uint8_t *data, size_t len);
+
 /*
  * Force the DUT assembler back to HUNT: send 24 S.BUS footer bytes (0x00).
  * Completes any stuck COLLECT window (at most 24 bytes still owed); ignored
