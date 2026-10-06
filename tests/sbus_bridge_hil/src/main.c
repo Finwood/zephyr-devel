@@ -6,15 +6,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <errno.h>
-
 #include <zephyr/kernel.h>
-#include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
 #include "capture.h"
 #include "frame.h"
+#include "status_led.h"
 #include "wire.h"
 
 #define HIL_STREAM_N               100
@@ -23,8 +21,8 @@
 #define HIL_PACED_SEND_GAP_MAX_US  12000
 #define HIL_RTT_MIN_US             50
 #define HIL_RTT_MAX_US             150
-#define HIL_GAPLESS_RX_MIN         65
-#define HIL_GAPLESS_RX_MAX         85
+#define HIL_GAPLESS_RX_MIN         70
+#define HIL_GAPLESS_RX_MAX         80
 #define HIL_GAPLESS_SEND_GAP_MIN_US 1000
 #define HIL_GAPLESS_SEND_GAP_MAX_US 6000
 #define HIL_UART_BYTE_US           87 /* 10/115200 ~= 86.8 */
@@ -35,11 +33,17 @@
 #define HIL_SETTLE_TIMEOUT_MS      2000
 #define HIL_CAPTURE_TIMEOUT_MS     20
 
-static void *eol_setup(void)
+static bool eol_any_failed(void)
 {
-	zassert_ok(hil_wire_init());
-	zassert_ok(hil_capture_init());
-	return NULL;
+	struct ztest_unit_test *test = NULL;
+
+	while ((test = z_ztest_get_next_test("eol", test)) != NULL) {
+		if (test->stats->fail_count > 0U) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static uint32_t now_us(void)
@@ -63,6 +67,33 @@ static void settle(void)
 	}
 
 	zassert_unreachable("DUT output did not settle within %d ms", HIL_SETTLE_TIMEOUT_MS);
+}
+
+static void *eol_setup(void)
+{
+	zassert_ok(hil_status_leds_init());
+	hil_status_leds_off();
+
+	zassert_ok(hil_wire_init());
+	/* Close any stuck DUT COLLECT window left by a prior failed run. */
+	zassert_ok(hil_wire_drain());
+	/* Drain may start a junk S.BUS frame after our TX completes. */
+	k_msleep(HIL_SETTLE_MS);
+	settle();
+	hil_wire_reset();
+	zassert_ok(hil_capture_init());
+	return NULL;
+}
+
+static void eol_teardown(void *data)
+{
+	ARG_UNUSED(data);
+
+	if (eol_any_failed()) {
+		hil_status_leds_fail();
+	} else {
+		hil_status_leds_pass();
+	}
 }
 
 static void assert_stream(const char *name, uint32_t sent_last, size_t rx_min, size_t rx_max,
@@ -256,22 +287,4 @@ ZTEST(eol, test_gapless)
 		      HIL_GAPLESS_SEND_GAP_MIN_US, HIL_GAPLESS_SEND_GAP_MAX_US, true);
 }
 
-ZTEST_SUITE(eol, NULL, eol_setup, NULL, NULL, NULL);
-
-static int cmd_eol(const struct shell *sh, size_t argc, char **argv)
-{
-	int fail;
-
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	fail = ztest_run_test_suite(eol, false, 1, 1, NULL);
-	if (fail == 0) {
-		shell_print(sh, "eol: PASS");
-		return 0;
-	}
-	shell_print(sh, "eol: FAIL");
-	return -EIO;
-}
-
-SHELL_CMD_REGISTER(eol, NULL, "Re-run sbus_bridge HIL suite", cmd_eol);
+ZTEST_SUITE(eol, NULL, eol_setup, NULL, NULL, eol_teardown);

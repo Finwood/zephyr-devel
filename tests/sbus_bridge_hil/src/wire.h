@@ -14,6 +14,14 @@
 int hil_wire_init(void);
 void hil_wire_reset(void);
 int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN]);
+
+/*
+ * Force the DUT assembler back to HUNT: send 24 S.BUS footer bytes (0x00).
+ * Completes any stuck COLLECT window (at most 24 bytes still owed); ignored
+ * while the DUT is already hunting. May provoke one junk S.BUS frame.
+ */
+int hil_wire_drain(void);
+
 size_t hil_wire_rx_count(void);
 bool hil_wire_rx_get(size_t i, uint32_t *seq, uint32_t *t_us);
 uint32_t hil_wire_corrupt_count(void);

@@ -34,7 +34,7 @@
   <title
      id="title1">Nucleo-32 G431KB pinout for sbus_bridge HIL wiring</title>
   <desc
-     id="desc1">USB at top. USART1 TX on D6 (PB6). USART2 RX on D12 (PB4, rx-invert). Local jumpers D6-A0 and D12-A1 for TIM2 capture. For Nucleo DUT: D6 to D0, D12 to D13. For sbus_bridge: D6 to PA1, D12 to PA4. No D12-to-D12. Console is ST-Link USB.</desc>
+     id="desc1">USB at top. USART1 TX on D6 (PB6). USART2 RX on D12 (PB4, rx-invert). Local jumpers D6-A0 and D12-A1 for TIM2 capture. Status LEDs: green D11 and red D10, open-drain to +5 V. For sbus_bridge: D6 to PA1, D12 to PA4. Console is ST-Link USB.</desc>
   <rect
      width="900"
      height="780"
@@ -309,7 +309,7 @@
      cx="318"
      cy="566"
      r="5.5"
-     fill="#edf2f7"
+     fill="#fc8181"
      stroke="#f7fafc"
      stroke-width="1.5"
      id="circle20" />
@@ -324,7 +324,7 @@
      cx="318"
      cy="600"
      r="5.5"
-     fill="#edf2f7"
+     fill="#68d391"
      stroke="#f7fafc"
      stroke-width="1.5"
      id="circle21" />
@@ -415,6 +415,14 @@
      font-size="11"
      fill="#e2e8f0"
      id="text27">+5V</text>
+  <text
+     x="596"
+     y="264"
+     text-anchor="start"
+     font-family="sans-serif"
+     font-size="11"
+     fill="#c53030"
+     id="text27a">LED anodes via 330?</text>
   <circle
      cx="582"
      cy="294"
@@ -661,6 +669,42 @@
      id="text46">USART1 TX PB6 (to DUT D0 or PA1)</text>
   <text
      x="304"
+     y="566"
+     text-anchor="end"
+     dominant-baseline="central"
+     font-family="sans-serif"
+     font-size="13"
+     font-weight="700"
+     fill="#c53030"
+     id="text47a">FAIL LED</text>
+  <text
+     x="304"
+     y="582"
+     text-anchor="end"
+     font-family="sans-serif"
+     font-size="11"
+     fill="#c53030"
+     id="text47b">D10 OD to 5V</text>
+  <text
+     x="304"
+     y="600"
+     text-anchor="end"
+     dominant-baseline="central"
+     font-family="sans-serif"
+     font-size="13"
+     font-weight="700"
+     fill="#276749"
+     id="text47c">PASS LED</text>
+  <text
+     x="304"
+     y="616"
+     text-anchor="end"
+     font-family="sans-serif"
+     font-size="11"
+     fill="#276749"
+     id="text47d">D11 OD to 5V</text>
+  <text
+     x="304"
      y="634"
      text-anchor="end"
      dominant-baseline="central"
@@ -676,7 +720,7 @@
      font-family="sans-serif"
      font-size="11"
      fill="#6b46c1"
-     id="text48">USART2 RX PB4 inv. (from DUT D13 or PA4)</text>
+     id="text48">USART2 RX PB4 inv. (from DUT PA4)</text>
   <!-- Right callouts: capture -->
   <text
      x="596"
@@ -732,7 +776,7 @@
      font-family="sans-serif"
      font-size="12"
      fill="#4a5568"
-     id="text56">USB at top. Console is ST-Link VCP. Cable: D6, D12, GND. Jumpers: D6-A0, D12-A1. Nucleo DUT: D6-&gt;D0, D12-&gt;D13 (not D12).</text>
+     id="text56">USB at top. Console is ST-Link VCP. Cable: D6, D12, GND. Jumpers: D6-A0, D12-A1. Status LEDs: D11 green, D10 red to +5 V.</text>
   <path
      style="fill:none;fill-opacity:0.8672;stroke:#2b6cb0;stroke-width:2;stroke-opacity:1;stroke-dasharray:6,6;stroke-dashoffset:0"
      d="m 365.45689,430.073 h 27.56897 v 102 l 145.27816,-0.005"

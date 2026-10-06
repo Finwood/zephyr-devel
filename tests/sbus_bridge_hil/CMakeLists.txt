@@ -9,4 +9,5 @@ target_sources(app PRIVATE
   src/capture.c
   src/frame.c
   src/wire.c
+  src/status_led.c
 )

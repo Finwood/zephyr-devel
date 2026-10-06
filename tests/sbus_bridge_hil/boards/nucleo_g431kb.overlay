@@ -2,17 +2,35 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Wiring (with DUT sbus_bridge):
- *   PB6 (D6)  USART1 TX 115200 8N1         -> DUT UART in
- *   PB4 (D12) USART2 RX 100k 8E2 rx-invert <- DUT S.BUS out
- *   PA0 (A0)  TIM2_CH1 jumpered to PB6 (UART start, falling)
- *   PA1 (A1)  TIM2_CH2 jumpered to PB4 (S.BUS start, rising)
+ *   PB6 (D6)   USART1 TX 115200 8N1         -> DUT UART in
+ *   PB4 (D12)  USART2 RX 100k 8E2 rx-invert <- DUT S.BUS out
+ *   PA0 (A0)   TIM2_CH1 jumpered to PB6 (UART start, falling)
+ *   PA1 (A1)   TIM2_CH2 jumpered to PB4 (S.BUS start, rising)
+ *   PB5 (D11)  green status LED, OD active-low to +5 V
+ *   PA11 (D10) red status LED, OD active-low to +5 V
  * Console LPUART1 PA2/PA3 untouched.
  */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	aliases {
 		uart-out = &usart1;
 		sbus-in = &usart2;
+		led-green = &hil_led_green;
+		led-red = &hil_led_red;
+	};
+};
+
+&leds {
+	hil_led_green: led_green {
+		gpios = <&gpiob 5 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		label = "HIL PASS";
+	};
+
+	hil_led_red: led_red {
+		gpios = <&gpioa 11 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		label = "HIL FAIL";
 	};
 };
 

@@ -4,7 +4,6 @@
 
 #include "wire.h"
 
-#include <errno.h>
 #include <string.h>
 
 #include <zephyr/device.h>
@@ -35,7 +34,8 @@ static atomic_t corrupt_count;
 static uint8_t rx_frame[HIL_FRAME_LEN];
 static size_t rx_pos;
 static int64_t last_rx_ms = -1;
-static uint8_t tx_frame[HIL_FRAME_LEN];
+static uint8_t tx_buf[HIL_FRAME_LEN];
+static size_t tx_len;
 static size_t tx_pos;
 K_SEM_DEFINE(tx_done, 0, 1);
 K_MUTEX_DEFINE(tx_lock);
@@ -47,18 +47,41 @@ static void uart_out_cb(const struct device *dev, void *user_data)
 	ARG_UNUSED(user_data);
 
 	uart_irq_update(dev);
-	while (tx_pos < HIL_FRAME_LEN && uart_irq_tx_ready(dev) > 0) {
-		sent = uart_fifo_fill(dev, &tx_frame[tx_pos], HIL_FRAME_LEN - tx_pos);
+	while (tx_pos < tx_len && uart_irq_tx_ready(dev) > 0) {
+		sent = uart_fifo_fill(dev, &tx_buf[tx_pos], tx_len - tx_pos);
 		if (sent <= 0) {
 			break;
 		}
 		tx_pos += (size_t)sent;
 	}
 
-	if (tx_pos == HIL_FRAME_LEN) {
+	if (tx_pos == tx_len) {
 		uart_irq_tx_disable(dev);
 		k_sem_give(&tx_done);
 	}
+}
+
+static int hil_wire_send(const uint8_t *data, size_t len)
+{
+	int ret;
+
+	if (data == NULL || len == 0U || len > sizeof(tx_buf)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&tx_lock, K_FOREVER);
+	k_sem_reset(&tx_done);
+	memcpy(tx_buf, data, len);
+	tx_len = len;
+	tx_pos = 0U;
+	uart_irq_tx_enable(uart_out);
+	ret = k_sem_take(&tx_done, K_MSEC(50));
+	if (ret != 0) {
+		uart_irq_tx_disable(uart_out);
+	}
+	k_mutex_unlock(&tx_lock);
+
+	return ret;
 }
 
 static void rx_byte(uint8_t byte)
@@ -156,24 +179,20 @@ void hil_wire_reset(void)
 
 int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN])
 {
-	int ret;
+	return hil_wire_send(frame, HIL_FRAME_LEN);
+}
 
-	if (frame == NULL) {
-		return -EINVAL;
-	}
+int hil_wire_drain(void)
+{
+	uint8_t pad[HIL_FRAME_LEN - 1U];
 
-	k_mutex_lock(&tx_lock, K_FOREVER);
-	k_sem_reset(&tx_done);
-	memcpy(tx_frame, frame, HIL_FRAME_LEN);
-	tx_pos = 0U;
-	uart_irq_tx_enable(uart_out);
-	ret = k_sem_take(&tx_done, K_MSEC(50));
-	if (ret != 0) {
-		uart_irq_tx_disable(uart_out);
-	}
-	k_mutex_unlock(&tx_lock);
-
-	return ret;
+	/* 24 footers: finishes any mid-COLLECT window (needs at most 24 bytes
+	 * when len==1). Footer 0x00 is valid S.BUS, so the DUT commits/emits
+	 * that junk frame and returns to HUNT. While already hunting, 0x00 is
+	 * discarded.
+	 */
+	memset(pad, HIL_FTR, sizeof(pad));
+	return hil_wire_send(pad, sizeof(pad));
 }
 
 size_t hil_wire_rx_count(void)
