@@ -35,6 +35,7 @@
 		sbus-out = &usart2;
 		led0 = &led_green;
 		led1 = &led_red;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -76,5 +77,9 @@
 	tx-invert;
 	fifo-enable;
 	interrupts = <28 0>;
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };

@@ -5,6 +5,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/clock.h>
@@ -17,8 +18,10 @@
 #define SBUS_OUT_NODE    DT_ALIAS(sbus_out)
 #define LED_GREEN_NODE   DT_ALIAS(led0)
 #define LED_RED_NODE     DT_ALIAS(led1)
+#define WDT_NODE         DT_ALIAS(watchdog0)
 
 #define MAIN_TICK_MS       5
+#define WDT_WINDOW_MS      50
 #define GREEN_PULSE_MS     50
 #define RED_SUPERSEDE_MS   200
 #define RED_FAULT_MS       2000
@@ -29,11 +32,13 @@ BUILD_ASSERT(DT_NODE_EXISTS(UART_IN_NODE), "alias uart-in missing");
 BUILD_ASSERT(DT_NODE_EXISTS(SBUS_OUT_NODE), "alias sbus-out missing");
 BUILD_ASSERT(DT_NODE_EXISTS(LED_GREEN_NODE), "alias led0 missing");
 BUILD_ASSERT(DT_NODE_EXISTS(LED_RED_NODE), "alias led1 missing");
+BUILD_ASSERT(DT_NODE_EXISTS(WDT_NODE), "alias watchdog0 missing");
 BUILD_ASSERT(DT_IRQ(UART_IN_NODE, priority) == DT_IRQ(SBUS_OUT_NODE, priority),
 	     "uart-in and sbus-out must share NVIC priority");
 
 static const struct device *const uart_in = DEVICE_DT_GET(UART_IN_NODE);
 static const struct device *const sbus_out = DEVICE_DT_GET(SBUS_OUT_NODE);
+static const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(LED_GREEN_NODE, gpios);
 static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(LED_RED_NODE, gpios);
 
@@ -105,6 +110,12 @@ int main(void)
 	uint16_t red_ms = 0;
 	int64_t last_led = k_uptime_get();
 	int64_t last_stats = last_led;
+	int wdt_channel;
+	struct wdt_timeout_cfg wdt_cfg = {
+		.flags = WDT_FLAG_RESET_SOC,
+		.window.min = 0,
+		.window.max = WDT_WINDOW_MS,
+	};
 
 	sbus_pipe_init(&pipe);
 
@@ -119,6 +130,19 @@ int main(void)
 	if (gpio_pin_configure_dt(&led_green, GPIO_OUTPUT_INACTIVE) < 0 ||
 	    gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE) < 0) {
 		printk("sbus: LED configure failed\n");
+		return 0;
+	}
+	if (!device_is_ready(wdt)) {
+		printk("sbus: watchdog not ready\n");
+		return 0;
+	}
+	wdt_channel = wdt_install_timeout(wdt, &wdt_cfg);
+	if (wdt_channel < 0) {
+		printk("sbus: watchdog install failed\n");
+		return 0;
+	}
+	if (wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG) < 0) {
+		printk("sbus: watchdog setup failed\n");
 		return 0;
 	}
 
@@ -141,6 +165,7 @@ int main(void)
 		uint32_t tx_frames;
 
 		k_sem_take(&wake, K_MSEC(MAIN_TICK_MS));
+		wdt_feed(wdt, wdt_channel);
 		now = k_uptime_get();
 		dt = (uint16_t)CLAMP(now - last_led, 0, 1000);
 		last_led = now;

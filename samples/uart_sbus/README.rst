@@ -15,6 +15,17 @@ Supported boards: ``nucleo_g431kb`` and ``sbus_bridge``.
 ``sbus_bridge`` is the intended custom hardware (STM32C031F6P6 UART→S.BUS
 PCB). Console on that board is **SEGGER RTT over SWD**, not a UART.
 
+Robustness
+**********
+
+Field builds enable a small recovery package:
+
+- Independent IWDG with a 100 ms window, fed from the main loop (≤5 ms tick).
+- Stack sentinel plus reboot-on-fatal so overflow/faults reset instead of hang.
+- Terse fault dump (``CONFIG_FAULT_DUMP=1``) and 1 KiB main/ISR stacks.
+
+See ``docs/superpowers/specs/2026-10-06-uart-sbus-field-robustness-design.md``.
+
 Wiring (Nucleo-32 Arduino Nano header)
 **************************************
 

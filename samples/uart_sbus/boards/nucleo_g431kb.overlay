@@ -78,3 +78,7 @@
 &lpuart1 {
 	interrupts = <91 2>;
 };
+
+&iwdg {
+	status = "okay";
+};
