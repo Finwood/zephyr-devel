@@ -176,13 +176,6 @@ int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN])
 	return ret;
 }
 
-int hil_wire_send_frame_at(const uint8_t frame[HIL_FRAME_LEN], uint32_t t_us)
-{
-	ARG_UNUSED(t_us);
-
-	return hil_wire_send_frame(frame);
-}
-
 size_t hil_wire_rx_count(void)
 {
 	return (size_t)atomic_get(&rx_count);

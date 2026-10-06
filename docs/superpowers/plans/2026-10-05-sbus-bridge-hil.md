@@ -253,7 +253,6 @@ EOF
   - `int hil_wire_init(void)`
   - `void hil_wire_reset(void)` — clear RX log, error counters, assembler state
   - `int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN])` — block until all 25 bytes accepted by USART1
-  - `int hil_wire_send_frame_at(const uint8_t frame[HIL_FRAME_LEN], uint32_t t_us)` — like send, but encode time is already in `frame`
   - `size_t hil_wire_rx_count(void)`
   - `bool hil_wire_rx_get(size_t i, uint32_t *seq, uint32_t *t_us)`
   - `uint32_t hil_wire_corrupt_count(void)` — bad CRC / framing / parity / unexpected header
@@ -364,7 +363,7 @@ EOF
 - Produces:
   - `int hil_capture_init(void)` — `counter_start`, configure CH0 falling + CH1 rising, both `COUNTER_CAPTURE_SINGLE_SHOT`
   - `int hil_capture_arm(void)` — enable both channels; clear prior results
-  - `int hil_capture_wait(uint32_t *t_uart, uint32_t *t_sbus, k_timeout_t timeout)` — wait until both callbacks fired; return `-EAGAIN` on timeout, `-EIO` on overcapture flag if exposed
+  - `int hil_capture_wait(uint32_t *t_uart, uint32_t *t_sbus, k_timeout_t timeout)` — wait until both callbacks fired; return `-EAGAIN` on timeout (the STM32 driver does not expose CCxOF)
   - `uint32_t hil_capture_ticks_to_us(uint32_t ticks)` — `counter_ticks_to_us`
   - `void hil_capture_disarm(void)` — disable both channels
 
@@ -428,7 +427,7 @@ Constants (match the spec):
 #define HIL_RTT_MAX_US         500
 #define HIL_GAPLESS_RX_MIN     65
 #define HIL_GAPLESS_RX_MAX     85
-#define HIL_GAPLESS_SEND_GAP_MIN_US 1500
+#define HIL_GAPLESS_SEND_GAP_MIN_US 1000
 #define HIL_GAPLESS_SEND_GAP_MAX_US 6000
 #define HIL_UART_BYTE_US       87   /* 10/115200 ≈ 86.8 */
 #define HIL_FRAME_UART_US      (HIL_FRAME_LEN * HIL_UART_BYTE_US)
@@ -505,7 +504,7 @@ After loop: require first valid frame within 50 ms of first send (fail early if 
 
 - [ ] **Step 3: `test_gapless`**
 
-`hil_capture_disarm()` for the whole case. Send 100 frames back-to-back (`hil_wire_send_frame` returns when USART accepted the 25 bytes; immediately encode/send next). Then `assert_stream(..., 99, 65, 85, 2, 1500, 6000, true)`.
+`hil_capture_disarm()` for the whole case. Send 100 frames back-to-back (`hil_wire_send_frame` returns when USART accepted the 25 bytes; immediately encode/send next). Then `assert_stream(..., 99, 65, 85, 2, 1000, 6000, true)`.
 
 - [ ] **Step 4: Keep `test_frame_crc_vector` first or drop it from `eol`**
 

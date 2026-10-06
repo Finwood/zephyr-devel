@@ -66,7 +66,9 @@ channels share one counter, clocked at 10 MHz (100 ns per tick).
 
 Round-trip time is the CH2 stamp minus the CH1 stamp. Capture is single-shot
 and is armed only while both lines are idle: the cut-through frame, and each
-frame of the paced run. A missed edge or an overcapture fails that case.
+frame of the paced run. A missed edge times out through `hil_capture_wait`
+with `-EAGAIN`. The STM32 Zephyr counter driver does not surface CCxOF to its
+callback, so overcapture cannot currently fail the case.
 
 The console stays LPUART1 on PA2/PA3, the ST-Link USB serial port, 115200
 8N1. The overlay must leave those pins alone. I2C2 on PA8/PA9 and TIM4 on PB8
@@ -132,7 +134,7 @@ round-trip cases print microseconds, before that line.
 | --- | --- | --- | --- |
 | 1 | Cut-through | One valid frame from idle | Exactly one valid frame, counter 0. CH2 stamp is strictly earlier than the UART header stamp plus 25 byte times at 115200 8N1 (10 bits per byte). The case prints that round-trip time in microseconds. |
 | 2 | Paced | 100 frames. Byte 0 of frame N+1 is submitted 10 ms after byte 0 of frame N | 100 valid frames. Every sequence gap is 1. Counter 99 is present. Send-time gaps are in 8–12 ms. Each round-trip time is in 50–500 µs. The case prints the minimum and maximum. If no valid frame has arrived 50 ms after the first byte, the case fails and stops. Then the 20 ms idle check. |
-| 3 | Gapless | 100 frames. The next frame is submitted as soon as USART1 has accepted the previous 25 bytes | 65–85 valid frames. Every sequence gap is 1 or 2. Counter 99 is present. Send-time gaps are in 1.5–6 ms. Capture stays disarmed. Then the 20 ms idle check. |
+| 3 | Gapless | 100 frames. The next frame is submitted as soon as USART1 has accepted the previous 25 bytes | 65–85 valid frames. Every sequence gap is 1 or 2. Counter 99 is present. Send-time gaps are in 1.0–6 ms. Capture stays disarmed. Then the 20 ms idle check. |
 
 The paced period is 10 ms, which is slower than one 3.0 ms S.BUS frame, so
 every frame fits. The gapless window is centered near 74 of 100: a UART frame

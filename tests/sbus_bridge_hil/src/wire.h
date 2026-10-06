@@ -14,7 +14,6 @@
 int hil_wire_init(void);
 void hil_wire_reset(void);
 int hil_wire_send_frame(const uint8_t frame[HIL_FRAME_LEN]);
-int hil_wire_send_frame_at(const uint8_t frame[HIL_FRAME_LEN], uint32_t t_us);
 size_t hil_wire_rx_count(void);
 bool hil_wire_rx_get(size_t i, uint32_t *seq, uint32_t *t_us);
 uint32_t hil_wire_corrupt_count(void);

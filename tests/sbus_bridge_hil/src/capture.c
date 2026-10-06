@@ -21,9 +21,23 @@ static uint32_t sbus_ticks;
 static atomic_t capture_mask;
 K_SEM_DEFINE(capture_done, 0, 1);
 
-static void capture_complete(uint8_t channel, uint32_t ticks)
+/*
+ * The STM32 Zephyr counter driver does not expose CCxOF here, so overcapture
+ * cannot fail a case; a missed edge still times out from hil_capture_wait()
+ * with -EAGAIN.
+ */
+static void capture_cb(const struct device *dev, uint8_t channel,
+		       counter_capture_flags_t flags, uint32_t ticks, void *user_data)
 {
 	atomic_val_t previous;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(flags);
+	ARG_UNUSED(user_data);
+
+	if (channel != UART_CAPTURE_CHANNEL && channel != SBUS_CAPTURE_CHANNEL) {
+		return;
+	}
 
 	if (channel == UART_CAPTURE_CHANNEL) {
 		uart_ticks = ticks;
@@ -37,40 +51,20 @@ static void capture_complete(uint8_t channel, uint32_t ticks)
 	}
 }
 
-static void uart_capture_cb(const struct device *dev, uint8_t channel,
-			    counter_capture_flags_t flags, uint32_t ticks, void *user_data)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(flags);
-	ARG_UNUSED(user_data);
-
-	capture_complete(channel, ticks);
-}
-
-static void sbus_capture_cb(const struct device *dev, uint8_t channel,
-			    counter_capture_flags_t flags, uint32_t ticks, void *user_data)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(flags);
-	ARG_UNUSED(user_data);
-
-	capture_complete(channel, ticks);
-}
-
 static int capture_configure(void)
 {
 	int ret;
 
 	ret = counter_capture_configure(capture_dev, UART_CAPTURE_CHANNEL,
 					COUNTER_CAPTURE_FALLING_EDGE | COUNTER_CAPTURE_SINGLE_SHOT,
-					uart_capture_cb, NULL);
+					capture_cb, NULL);
 	if (ret != 0) {
 		return ret;
 	}
 
 	ret = counter_capture_configure(capture_dev, SBUS_CAPTURE_CHANNEL,
 					COUNTER_CAPTURE_RISING_EDGE | COUNTER_CAPTURE_SINGLE_SHOT,
-					sbus_capture_cb, NULL);
+					capture_cb, NULL);
 	if (ret != 0) {
 		(void)counter_disable_capture(capture_dev, UART_CAPTURE_CHANNEL);
 	}
