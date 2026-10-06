@@ -151,7 +151,13 @@ int main(void)
 	uart_irq_err_enable(uart_in);
 	uart_irq_rx_enable(uart_in);
 
+#if defined(CONFIG_BOARD_SBUS_BRIDGE)
+	printk("sbus: PA1 115200 8N1 -> PA4 S.BUS 100k 8E2\n");
+#elif defined(CONFIG_BOARD_NUCLEO_G431KB)
 	printk("sbus: D0/PA10 115200 8N1 -> D13/PB3 S.BUS 100k 8E2\n");
+#else
+	printk("sbus: 115200 8N1 -> S.BUS 100k 8E2\n");
+#endif
 
 	for (;;) {
 		int64_t now;
