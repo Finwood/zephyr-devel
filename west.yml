@@ -10,11 +10,11 @@ manifest:
 
   projects:
     - name: zephyr
-      # remote: zephyrproject-rtos
-      # revision: v4.4.0
-      # clone-depth: 1
-      remote: Finwood
-      revision: main
+      remote: zephyrproject-rtos
+      revision: v4.5.0-rc1
+      clone-depth: 1
+      # remote: Finwood
+      # revision: main
       west-commands: scripts/west-commands.yml
       import:
         path-prefix: deps
