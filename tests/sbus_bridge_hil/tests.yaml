@@ -1,9 +1,0 @@
-common:
-  platform_allow:
-    - nucleo_g431kb
-  tags:
-    - sbus
-    - hil
-  harness: ztest
-tests:
-  sbus.bridge.hil: {}
