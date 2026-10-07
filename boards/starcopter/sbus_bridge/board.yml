@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: MIT
-
-board:
-  name: sbus_bridge
-  full_name: starcopter UART S.BUS Bridge
-  vendor: starcopter
-  socs:
-    - name: stm32c031xx

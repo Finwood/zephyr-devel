@@ -1,5 +1,7 @@
 # firmware-sbus-bridge Migration Implementation Plan
 
+> **Status:** Migration complete. The code now lives in [starcopter/firmware-sbus-bridge](https://github.com/starcopter/firmware-sbus-bridge) (`develop`); the migrated trees were removed from zephyr-devel.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Migrate uart_sbus (renamed to sbus_bridge) from zephyr-devel into `firmware-sbus-bridge` with filtered history and GC-like scaffolding, without release/`app.yaml`.
@@ -16,7 +18,7 @@
 - Keep Kconfig symbol `CONFIG_UART_SBUS_SBUS2` (protocol flag).
 - No `app.yaml`, no release Makefile target, no release GitHub workflows.
 - App-owned board/tests/docs (not firmware-sdk).
-- Board revision: `sbus_bridge@1.0` (`major.minor.patch`, default `"1.0"`).
+- Board revision: `sbus_bridge@1.0.0` (`major.minor.patch`, default `"1.0.0"`).
 - After verify: delete migrated trees from zephyr-devel (no stubs).
 - Spec: `docs/superpowers/specs/2026-10-07-firmware-sbus-bridge-migration-design.md`.
 
@@ -124,12 +126,12 @@ git tag pre-reshape
 - Create/replace: root `CMakeLists.txt`, `Kconfig`, `prj.conf`, `VERSION`
 - Modify: `tests/sbus_pipe/CMakeLists.txt` paths
 - Create: `zephyr/module.yml`
-- Modify: `boards/starcopter/sbus_bridge/board.yml` (add revision `1.0`)
-- Create: `boards/starcopter/sbus_bridge/sbus_bridge_1_0.overlay`
+- Modify: `boards/starcopter/sbus_bridge/board.yml` (add revision `1.0.0`)
+- Create: `boards/starcopter/sbus_bridge/sbus_bridge_1_0_0.overlay`
 
 **Interfaces:**
 - Consumes: filtered tree from Task 1
-- Produces: buildable app at repo root named `sbus_bridge`; board target `sbus_bridge@1.0`
+- Produces: buildable app at repo root named `sbus_bridge`; board target `sbus_bridge@1.0.0`
 
 - [ ] **Step 1: Move sources and board overlays**
 
@@ -231,7 +233,7 @@ tests:
 
 Do **not** register `cmake: .` / app `kconfig` as a Zephyr module library — this repo is the west application, not an SDK code module. `board_root` + `tests` are enough for board discovery and twister.
 
-- [ ] **Step 7: Version board as 1.0**
+- [ ] **Step 7: Version board as 1.0.0**
 
 Replace `boards/starcopter/sbus_bridge/board.yml` with:
 
@@ -244,25 +246,25 @@ board:
   vendor: starcopter
   revision:
     format: major.minor.patch
-    default: "1.0"
+    default: "1.0.0"
     revisions:
-      - name: "1.0"
+      - name: "1.0.0"
   socs:
     - name: stm32c031xx
 ```
 
-Create empty `boards/starcopter/sbus_bridge/sbus_bridge_1_0.overlay`:
+Create empty `boards/starcopter/sbus_bridge/sbus_bridge_1_0_0.overlay`:
 
 ```c
 /*
  * SPDX-License-Identifier: MIT
  *
- * sbus_bridge hardware revision 1.0 (no DTS deltas vs base sbus_bridge.dts).
+ * sbus_bridge hardware revision 1.0.0 (no DTS deltas vs base sbus_bridge.dts).
  */
 ```
 
 Leave `sbus_bridge.yaml` identifier as `sbus_bridge` (twister discovers
-`sbus_bridge@1.0` via board.yml default). Keep app fragment
+`sbus_bridge@1.0.0` via board.yml default). Keep app fragment
 `boards/sbus_bridge.conf` (applies across revisions).
 
 - [ ] **Step 8: Fix sbus_pipe unit test paths**
@@ -304,7 +306,7 @@ chore: reshape sbus_bridge into product-app layout
 
 Move filtered zephyr-devel sample paths to sources/, app-owned boards,
 and root build files; rename project/binary to sbus_bridge; version
-board as sbus_bridge@1.0.
+board as sbus_bridge@1.0.0.
 EOF
 )"
 ```
@@ -345,14 +347,14 @@ manifest:
 
 Base on `firmware-gc/Makefile` with these differences:
 
-- `BOARD ?= sbus_bridge@1.0`
+- `BOARD ?= sbus_bridge@1.0.0`
 - Delete the `release` phony target and body
 - Keep `check-sdk-pin`, `compile`, `flash`, `clean`, `help`, reports
 
 Minimal compile section must invoke:
 
 ```makefile
-BOARD ?= sbus_bridge@1.0
+BOARD ?= sbus_bridge@1.0.0
 APP_NAME := $(notdir $(CURDIR))
 PROJECT_ROOT := $(shell realpath ../..)
 SDK_ROOT := $(PROJECT_ROOT)/firmware-sdk
@@ -363,7 +365,7 @@ compile: check-sdk-pin
 ```
 
 `BUILD_DIR_FOLDER` already sanitizes `@` → `_` (from firmware-gc), so the
-build dir is `build_sbus_bridge_1.0` or similar. Copy the full non-release
+build dir is `build_sbus_bridge_1.0.0` or similar. Copy the full non-release
 portions from firmware-gc; keep flash/compile/clean/help at minimum.
 
 - [ ] **Step 3: Dotfiles**
@@ -388,7 +390,7 @@ jobs:
     secrets:
       ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
     with:
-      board: sbus_bridge@1.0
+      board: sbus_bridge@1.0.0
       app-path: applications/firmware-sbus-bridge
 ```
 
@@ -423,7 +425,7 @@ direnv allow .
 
 ## Build and flash
 
-Default board `sbus_bridge@1.0`.
+Default board `sbus_bridge@1.0.0`.
 
 ```bash
 make compile
@@ -502,28 +504,28 @@ If `west update` with this manifest fails because GitHub repo does not exist yet
 ```bash
 cd /home/lasse/work/firmware/applications/firmware-sbus-bridge
 export ZEPHYR_BASE=/home/lasse/work/firmware/zephyr
-uv run --project ../../firmware-sdk west build -b sbus_bridge@1.0 -d build_sbus_bridge_1_0 .
+uv run --project ../../firmware-sdk west build -b sbus_bridge@1.0.0 -d build_sbus_bridge_1_0 .
 ```
 
 Ensure the app directory is on Zephyr’s module path so `board_root` applies. If boards are not found, pass:
 
 ```bash
-uv run --project ../../firmware-sdk west build -b sbus_bridge@1.0 -d build_sbus_bridge_1_0 -- \
+uv run --project ../../firmware-sdk west build -b sbus_bridge@1.0.0 -d build_sbus_bridge_1_0 -- \
   -DBOARD_ROOT=/home/lasse/work/firmware/applications/firmware-sbus-bridge .
 ```
 
 Prefer fixing `zephyr/module.yml` discovery over leaving a permanent `-DBOARD_ROOT` hack. West includes the manifest repository as a Zephyr module when `zephyr/module.yml` exists.
 
-- [ ] **Step 2: Compile for sbus_bridge@1.0**
+- [ ] **Step 2: Compile for sbus_bridge@1.0.0**
 
 ```bash
 cd /home/lasse/work/firmware/applications/firmware-sbus-bridge
 make compile
 ```
 
-Expected: success; artifact under `build_sbus_bridge_1.0/` (or Makefile-sanitized
+Expected: success; artifact under `build_sbus_bridge_1.0.0/` (or Makefile-sanitized
 equiv) named `sbus_bridge.elf` / `sbus_bridge.bin` (via `CONFIG_KERNEL_BIN_NAME`).
-CMake should report board revision `1.0`.
+CMake should report board revision `1.0.0`.
 
 Verify:
 
@@ -644,7 +646,7 @@ gh pr create --title "chore(sbus): remove uart_sbus after migration" --body "$(c
 - Remove uart_sbus sample, sbus_bridge board, sbus tests, and related superpowers docs from zephyr-devel after migration to starcopter/firmware-sbus-bridge (sbus_bridge).
 
 ## Test plan
-- [ ] Confirm firmware-sbus-bridge builds for sbus_bridge@1.0
+- [ ] Confirm firmware-sbus-bridge builds for sbus_bridge@1.0.0
 - [ ] Confirm tests/sbus_pipe passes on native_sim in the new repo
 - [ ] Grep zephyr-devel for leftover uart_sbus / sbus_bridge references
 EOF
@@ -655,6 +657,6 @@ EOF
 
 ## Self-review
 
-1. **Spec coverage:** App-owned layout, filter-repo via uvx, sbus_bridge rename + KERNEL_BIN_NAME, board `sbus_bridge@1.0`, no app.yaml/release, zephyr-devel deletion — all have tasks. Historical superpowers docs unchanged.
+1. **Spec coverage:** App-owned layout, filter-repo via uvx, sbus_bridge rename + KERNEL_BIN_NAME, board `sbus_bridge@1.0.0`, no app.yaml/release, zephyr-devel deletion — all have tasks. Historical superpowers docs unchanged.
 2. **Placeholders:** None intentional; BOARD_ROOT fallback documented only as verify contingency.
-3. **Naming:** `sbus_bridge` project/binary (`CONFIG_KERNEL_BIN_NAME`); board `sbus_bridge@1.0`; `CONFIG_UART_SBUS_SBUS2` retained; do not rewrite historical superpowers specs/plans (`uart_sbus` / `uart-sbus` filenames and prose stay).
+3. **Naming:** `sbus_bridge` project/binary (`CONFIG_KERNEL_BIN_NAME`); board `sbus_bridge@1.0.0`; `CONFIG_UART_SBUS_SBUS2` retained; do not rewrite historical superpowers specs/plans (`uart_sbus` / `uart-sbus` filenames and prose stay).

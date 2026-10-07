@@ -20,7 +20,7 @@ and docs app-owned.
 | Binary name | `CONFIG_KERNEL_BIN_NAME="sbus_bridge"` |
 | filter-repo install | Run via `uvx git-filter-repo` only (no pip install) |
 | Release / `app.yaml` | Out of scope (follow-up) |
-| Board revision | Version as `1.0` → build target `sbus_bridge@1.0` |
+| Board revision | Version as `1.0.0` → build target `sbus_bridge@1.0.0` |
 | Historical docs | Keep existing superpowers specs/plans filenames and in-doc names as-is |
 
 ## Source inventory (zephyr-devel)
@@ -42,7 +42,7 @@ applications/firmware-sbus-bridge/
 ├── Kconfig
 ├── prj.conf                 # includes CONFIG_KERNEL_BIN_NAME="sbus_bridge"
 ├── VERSION
-├── Makefile                 # BOARD ?= sbus_bridge@1.0; no release target
+├── Makefile                 # BOARD ?= sbus_bridge@1.0.0; no release target
 ├── PIPELINE.md
 ├── README.md
 ├── CHANGELOG.md
@@ -53,7 +53,7 @@ applications/firmware-sbus-bridge/
 ├── boards/
 │   ├── starcopter/sbus_bridge/
 │   │   ├── board.yml        # revision format major.minor.patch, default 1.0
-│   │   ├── sbus_bridge_1_0.overlay  # empty marker overlay for rev 1.0
+│   │   ├── sbus_bridge_1_0_0.overlay  # empty marker overlay for rev 1.0
 │   │   └── …
 │   ├── nucleo_g431kb.conf
 │   ├── nucleo_g431kb.overlay
@@ -70,14 +70,14 @@ applications/firmware-sbus-bridge/
 ├── .clang-format
 ├── .markdownlint.yaml
 └── .github/workflows/
-    ├── pr-compile.yaml      # board: sbus_bridge@1.0
+    ├── pr-compile.yaml      # board: sbus_bridge@1.0.0
     └── push-pre-commit.yaml
 ```
 
 Explicitly **not** included: `app.yaml`, release Makefile target, release GitHub
 workflows.
 
-## Board revision `1.0`
+## Board revision `1.0.0`
 
 During reshape, extend `boards/starcopter/sbus_bridge/board.yml`:
 
@@ -88,17 +88,16 @@ board:
   vendor: starcopter
   revision:
     format: major.minor.patch
-    default: "1.0"
+    default: "1.0.0"
     revisions:
-      - name: "1.0"
+      - name: "1.0.0"
   socs:
     - name: stm32c031xx
 ```
 
-Add an empty `sbus_bridge_1_0.overlay` (same pattern as `gc_A_2.overlay`).
-Default / CI / Makefile board string: `sbus_bridge@1.0`. Building plain
-`sbus_bridge` still resolves to `1.0` via `default`, but scripts and docs use
-the explicit `@1.0` form.
+Add an empty `sbus_bridge_1_0_0.overlay` (same pattern as `gc_A_2.overlay`).
+Default / CI / Makefile board string: `sbus_bridge@1.0.0`. Building plain
+`sbus_bridge` still resolves to `1.0.0` via `default`; scripts and docs use the explicit `@1.0.0` form.
 
 ## History pipeline
 
@@ -106,7 +105,7 @@ the explicit `@1.0` form.
 2. `uvx git-filter-repo` keep only the paths above (exact list in the plan).
 3. Replace the empty `firmware-sbus-bridge` git history with the filtered repo.
 4. Reshape commit: move sample → app root / `sources/`, rename project/binary to
-   `sbus_bridge`, version board as `sbus_bridge@1.0`, add GC-like scaffolding,
+   `sbus_bridge`, version board as `sbus_bridge@1.0.0`, add GC-like scaffolding,
    fix test paths.
 5. Create GitHub remote `starcopter/firmware-sbus-bridge`, default branch
    `develop`, push.
@@ -117,7 +116,7 @@ the explicit `@1.0` form.
 
 - CMake `project(sbus_bridge)`
 - Binary: `CONFIG_KERNEL_BIN_NAME="sbus_bridge"`
-- Board target: `sbus_bridge@1.0` (Makefile, CI, docs) — same stem as the app;
+- Board target: `sbus_bridge@1.0.0` (Makefile, CI, docs) — same stem as the app;
   board vs application are distinct Zephyr objects
 - Product README / CHANGELOG / Kconfig mainmenu / GitHub description use
   `sbus_bridge`, not `uart_sbus` / `uart_bridge`

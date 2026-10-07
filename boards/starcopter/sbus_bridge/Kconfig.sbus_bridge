@@ -1,4 +1,0 @@
-# SPDX-License-Identifier: MIT
-
-config BOARD_SBUS_BRIDGE
-	select SOC_STM32C031XX
